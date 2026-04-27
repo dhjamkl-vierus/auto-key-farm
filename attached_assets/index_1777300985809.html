@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+
+    <!-- 🔥 HEADER -->
+    <div class="header">
+        <img src="assets/logo.png" class="logo">
+        <div class="title">SAILOR PIECE</div>
+
+        <div class="hotkeys">
+            <span>F1 Toggle</span>
+            <span>F2 Show</span>
+            <span>F3 Exit</span>
+        </div>
+    </div>
+
+    <!-- 🧠 MAIN -->
+    <div class="main">
+
+        <!-- STATUS -->
+        <div class="card">
+            <h3>MAIN</h3>
+
+            <div class="row">
+                SYSTEM STATUS 
+                <button id="toggleBtn">ON</button>
+            </div>
+
+            <div class="row">
+                MODE 
+                <select id="mode">
+                    <option>Easy</option>
+                    <option>Boss Rush</option>
+                    <option>Infinity Tower</option>
+                </select>
+            </div>
+
+        </div>
+
+        <!-- TARGET KEY -->
+        <div class="card">
+            <h3>Target Key</h3>
+            <div id="slots"></div>
+
+            <button onclick="addSlot()">+ Add</button>
+            <button onclick="removeSlot()">- Remove</button>
+        </div>
+
+        <!-- SETTINGS -->
+        <div class="card">
+            <h3>Settings</h3>
+
+            Theme:
+            <select onchange="changeTheme(this.value)">
+                <option>dark</option>
+                <option>neon</option>
+            </select>
+
+            <br><br>
+
+            <button onclick="exitApp()">EXIT</button>
+        </div>
+
+    </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

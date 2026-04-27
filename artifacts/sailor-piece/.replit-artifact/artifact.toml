@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Sailor Piece Electron"
+version = "1.0.0"
+id = "artifacts/sailor-piece"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21452
+
+[services.development]
+run = "pnpm --filter @workspace/sailor-piece run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/sailor-piece", "run", "build" ]
+publicDir = "artifacts/sailor-piece/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21452"
+BASE_PATH = "/"
