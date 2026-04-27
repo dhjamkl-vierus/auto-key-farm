@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Wifi, Globe2, Activity, MapPin, CircleDot } from "lucide-react";
+import { Wifi, Globe2, Activity, MapPin } from "lucide-react";
 import { fetchNetInfo, pingMs, type NetInfo } from "@/lib/network";
 
 export function StatusStrip() {
@@ -9,7 +9,7 @@ export function StatusStrip() {
 
   useEffect(() => {
     fetchNetInfo()
-      .then((n) => setNet(n))
+      .then(setNet)
       .catch(() => setNet(null));
 
     const refreshPing = () => pingMs().then(setPing).catch(() => setPing(null));
@@ -28,25 +28,18 @@ export function StatusStrip() {
     };
   }, []);
 
-  const isOnline = online && !!net?.ip && net.ip !== "offline";
-  const ipLabel = isOnline ? net?.ip ?? "…" : "Offline";
-  const country = isOnline ? net?.country || "Unknown" : "Unknown";
-  const flag = isOnline ? net?.countryCode : "";
+  // Privacy: never reveal the actual IP, only the connectivity flag.
+  const ipReachable = online && !!net?.ip && net.ip !== "offline" && net.ip !== "—";
+  const ipLabel = ipReachable ? "Online" : "Offline";
+  const ipColor = ipReachable ? "var(--good)" : "var(--bad)";
+  const country = ipReachable ? net?.country || "Unknown" : "Unknown";
+  const flag = ipReachable ? net?.countryCode : "";
 
   return (
     <div
       className="flex items-center gap-3 text-xs flex-wrap"
       style={{ color: "var(--text-dim)" }}
     >
-      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--bg-elev)] border border-[var(--border-soft)]">
-        <CircleDot
-          className="w-3.5 h-3.5"
-          style={{ color: isOnline ? "var(--good)" : "var(--bad)" }}
-        />
-        <span className="font-mono font-bold" style={{ color: isOnline ? "var(--good)" : "var(--bad)" }}>
-          {isOnline ? "Online" : "Offline"}
-        </span>
-      </div>
       <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--bg-elev)] border border-[var(--border-soft)]">
         <Activity
           className="w-3.5 h-3.5"
@@ -59,8 +52,10 @@ export function StatusStrip() {
         <span className="font-mono">Ping: <b>{ping == null ? "—" : `${ping}ms`}</b></span>
       </div>
       <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--bg-elev)] border border-[var(--border-soft)]">
-        <Wifi className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} />
-        <span className="font-mono">IP: <b>{ipLabel}</b></span>
+        <Wifi className="w-3.5 h-3.5" style={{ color: ipColor }} />
+        <span className="font-mono">
+          IP: <b style={{ color: ipColor }}>{ipLabel}</b>
+        </span>
       </div>
       <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--bg-elev)] border border-[var(--border-soft)]">
         {flag ? (
@@ -75,7 +70,7 @@ export function StatusStrip() {
         )}
         <span>{country}</span>
       </div>
-      {isOnline && net?.city && (
+      {ipReachable && net?.city && (
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--bg-elev)] border border-[var(--border-soft)]">
           <MapPin className="w-3.5 h-3.5" />
           <span>{net.city}{net.region ? `, ${net.region}` : ""}</span>

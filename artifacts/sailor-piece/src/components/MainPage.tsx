@@ -35,13 +35,15 @@ export function MainPage({ cfg, set }: Props) {
   };
   const addSlot = () => {
     if (cfg.slots.length >= 10) return;
+    // New slot defaults to OFF — user must toggle it on explicitly.
     set("slots", [
       ...cfg.slots,
-      { id: crypto.randomUUID(), key: "", delay: 100, enabled: true, assign: "All" },
+      { id: crypto.randomUUID(), key: "", delay: 100, enabled: false, assign: "All" },
     ]);
     dbg.info("Added new key slot");
   };
   const removeSlot = (id: string) => {
+    // Always keep at least 1 slot.
     if (cfg.slots.length <= 1) return;
     set("slots", cfg.slots.filter((s) => s.id !== id));
   };
@@ -146,7 +148,7 @@ export function MainPage({ cfg, set }: Props) {
           <div className="grid gap-3">
             <WeaponRow
               icon={<Sword className="w-4 h-4" style={{ color: "var(--accent)" }} />}
-              label="Weapon Switching (Manual Select) — chọn vị trí chuột"
+              label="Weapon Switching (Manual Select)"
               enabled={cfg.weaponManual}
               onToggle={(v) => set("weaponManual", v)}
             >
@@ -171,18 +173,27 @@ export function MainPage({ cfg, set }: Props) {
 
             <WeaponRow
               icon={<Swords className="w-4 h-4" style={{ color: "var(--accent-2)" }} />}
-              label="Weapon Switching (Auto) — cycle phím 1 ↔ 2"
+              label="Weapon Switching (Auto)"
               enabled={cfg.weaponAuto}
               onToggle={(v) => set("weaponAuto", v)}
             >
-              <div className="grid grid-cols-3 gap-2 items-end mt-2">
+              <div className="grid grid-cols-2 gap-2 items-end mt-2">
                 <LabeledInput
                   label="Auto Swap Delay (ms)"
                   value={cfg.weaponAutoDelay}
                   onChange={(v) => set("weaponAutoDelay", v)}
                 />
-                <LabeledKey label="Key 1" value={cfg.weaponAutoKey1} onChange={(v) => set("weaponAutoKey1", v)} />
-                <LabeledKey label="Key 2" value={cfg.weaponAutoKey2} onChange={(v) => set("weaponAutoKey2", v)} />
+                <div
+                  className="text-[11px] rounded-md px-2 py-2 border"
+                  style={{
+                    color: "var(--text-dim)",
+                    background: "var(--bg-base)",
+                    borderColor: "var(--border-soft)",
+                  }}
+                >
+                  Khi bật: tự động ấn <span className="kbd">1</span> →{" "}
+                  <span className="kbd">2</span> lặp lại theo delay.
+                </div>
               </div>
             </WeaponRow>
           </div>
@@ -423,15 +434,6 @@ function LabeledInput({ label, value, onChange }: { label: string; value: number
         onChange={(e) => onChange(Math.max(50, Number(e.target.value) || 50))}
         className="input"
       />
-    </div>
-  );
-}
-
-function LabeledKey({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <div>
-      <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>{label}</div>
-      <KeyCapture value={value} onChange={onChange} className="w-full justify-between" />
     </div>
   );
 }

@@ -144,17 +144,14 @@ class MacroEngine {
       }, Math.max(50, cfg.weaponManualDelay));
     }
 
-    // Auto = cycle key 1 and key 2 on the keyboard
+    // Auto = hard-coded keys "1" and "2" on the keyboard, alternating
     if (cfg.mode !== "Easy" && cfg.weaponAuto) {
       this.meleeAutoTimer = window.setInterval(() => {
         const next = this.state.currentWeapon === 1 ? 2 : 1;
-        const key = next === 1
-          ? normalizeKey(cfg.weaponAutoKey1)
-          : normalizeKey(cfg.weaponAutoKey2);
         this.state.currentWeapon = next as 1 | 2;
         this.state.totalSends += 1;
         this.emit();
-        dbg.info(`Pressed "${key}" (auto weapon swap)`);
+        dbg.info(`Pressed "${next}" (auto weapon swap)`);
       }, Math.max(50, cfg.weaponAutoDelay));
     }
 

@@ -88,8 +88,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   weaponAutoKey1: "1",
   weaponAutoKey2: "2",
   slots: [
-    { id: crypto.randomUUID(), key: "e", delay: 100, enabled: true, assign: "All" },
-    { id: crypto.randomUUID(), key: "q", delay: 100, enabled: true, assign: "All" },
+    { id: crypto.randomUUID(), key: "E", delay: 100, enabled: false, assign: "All" },
   ],
   autoClick: false,
   autoClickDelay: 100,

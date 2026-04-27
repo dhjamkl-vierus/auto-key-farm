@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Palette, Keyboard, Webhook, Eye, Bug, ChevronDown, ChevronUp, Gamepad2 } from "lucide-react";
+import { DebugHistory } from "./DebugHistory";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "./cheat/Card";
 import { Switch } from "./cheat/Switch";
@@ -186,6 +187,8 @@ export function SettingsPage({ cfg, set, applyAll }: Props) {
           Debug messages are shown inline at the bottom of the menu and de-duplicated automatically (no spam).
         </div>
       </Card>
+
+      <DebugHistory />
     </div>
   );
 }

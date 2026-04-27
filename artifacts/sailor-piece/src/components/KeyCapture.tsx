@@ -9,18 +9,23 @@ interface Props {
 }
 
 /**
- * Click → recording mode. Press any key → captured.
- * IMPORTANT: we blur the button immediately so that pressing Space/Enter
- * captures the key instead of re-triggering the button click.
+ * Bullet-proof key capture:
+ *  - onMouseDown.preventDefault() so the button never gets keyboard focus,
+ *    which means Space/Enter can never re-trigger this same button.
+ *  - useRef wraps onChange so the effect ONLY depends on `recording`
+ *    (parent re-renders no longer churn the listener).
+ *  - The handler always calls setRecording(false) at the end → button always
+ *    leaves recording mode and re-renders showing the new key label.
  */
 export function KeyCapture({ value, onChange, className = "", placeholder = "Press a key" }: Props) {
   const [recording, setRecording] = useState(false);
-  const btnRef = useRef<HTMLButtonElement>(null);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   useEffect(() => {
     if (!recording) return;
     const handler = (e: KeyboardEvent) => {
-      // Modifier-only presses are ignored, anything else is captured.
+      // Pure modifiers? Wait for the real key.
       if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return;
       e.preventDefault();
       e.stopPropagation();
@@ -28,22 +33,18 @@ export function KeyCapture({ value, onChange, className = "", placeholder = "Pre
         setRecording(false);
         return;
       }
-      onChange(getKeyLabel(e));
+      onChangeRef.current(getKeyLabel(e));
       setRecording(false);
     };
     window.addEventListener("keydown", handler, true);
     return () => window.removeEventListener("keydown", handler, true);
-  }, [recording, onChange]);
+  }, [recording]);
 
   return (
     <button
-      ref={btnRef}
       type="button"
-      onClick={() => {
-        setRecording(true);
-        // 🔥 fix Space/Enter bug: blur so the button can't re-fire its own click
-        btnRef.current?.blur();
-      }}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={() => setRecording(true)}
       className={`btn ${className}`}
     >
       <span className="kbd">{value || "—"}</span>
