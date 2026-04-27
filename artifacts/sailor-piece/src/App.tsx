@@ -34,6 +34,9 @@ export default function App() {
   const set = <K extends keyof AppConfig>(key: K, v: AppConfig[K]) => {
     setCfg((c) => ({ ...c, [key]: v }));
   };
+  const applyAll = (patch: Partial<AppConfig>) => {
+    setCfg((c) => ({ ...c, ...patch }));
+  };
 
   // Global hotkeys (F1 toggle, F2 show/hide, F3 exit)
   useEffect(() => {
@@ -77,7 +80,7 @@ export default function App() {
             GOODBYE, PIRATE
           </div>
           <div className="mt-3" style={{ color: "var(--text-dim)" }}>
-            Sailor Piece electron has been closed. You can reload the page to start again.
+            AutoKey-Farm has been closed. You can reload the page to start again.
           </div>
           <button
             className="btn btn-primary mt-6"
@@ -143,7 +146,7 @@ export default function App() {
               <Sidebar active={tab} onChange={setTab} />
               <main className="flex-1 scroll-y p-5 fade-up" key={tab}>
                 {tab === "home" && <MainPage cfg={cfg} set={set} />}
-                {tab === "settings" && <SettingsPage cfg={cfg} set={set} />}
+                {tab === "settings" && <SettingsPage cfg={cfg} set={set} applyAll={applyAll} />}
                 {tab === "info" && <InfoPage />}
                 {tab === "soon" && <ComingSoonPage />}
               </main>

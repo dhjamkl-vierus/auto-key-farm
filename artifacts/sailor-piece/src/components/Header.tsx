@@ -66,7 +66,7 @@ export function Header({ onMinimize, onExit }: Props) {
             className="font-display tracking-[0.18em] text-3xl font-bold glow-text"
             style={{ color: "var(--text-base)" }}
           >
-            SAILOR PIECE
+            AUTOKEY-FARM
           </motion.div>
           <motion.div
             initial={{ opacity: 0 }}

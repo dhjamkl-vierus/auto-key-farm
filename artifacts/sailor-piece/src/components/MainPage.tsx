@@ -2,14 +2,15 @@ import { useMemo, useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 import {
   Power, Cog, Target, MousePointerClick, Plus, Minus, Trash2,
-  Sword, Swords, Hand,
+  Sword, Swords, Hand, Fish,
 } from "lucide-react";
 import { Card } from "./cheat/Card";
 import { Switch } from "./cheat/Switch";
-import { type AppConfig, type KeySlot, type MacroMode, isFirstEverVisit } from "@/lib/storage";
+import { type AppConfig, type KeySlot, type MacroMode, type MousePos, isFirstEverVisit } from "@/lib/storage";
 import { macro, formatRuntime, type MacroState } from "@/lib/macro";
 import { dbg } from "@/lib/debug";
 import { KeyCapture } from "./KeyCapture";
+import { MousePosCapture } from "./MousePosCapture";
 
 interface Props {
   cfg: AppConfig;
@@ -26,8 +27,7 @@ export function MainPage({ cfg, set }: Props) {
   const state = useMacroState();
   const showWeapon = cfg.mode !== "Easy";
 
-  // First-ever open => "Chào Mừng Người Dùng!!"
-  // Any subsequent open (after closing) => "Chào mừng trở lại!"
+  // First-ever open vs subsequent open
   const isFirst = useMemo(() => isFirstEverVisit(), []);
 
   const updateSlot = (id: string, patch: Partial<KeySlot>) => {
@@ -59,7 +59,7 @@ export function MainPage({ cfg, set }: Props) {
           {isFirst ? "Chào Mừng Người Dùng!!" : "Chào mừng trở lại!"}
         </div>
         <div className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
-          ▸ Sailor Piece Systems — Hệ Thống trải nghiệm chế độ AutoKey-Farm
+          ▸ AutoKey-Farm Systems — Hệ Thống trải nghiệm chế độ AutoKey-Farm
         </div>
       </motion.div>
 
@@ -84,7 +84,6 @@ export function MainPage({ cfg, set }: Props) {
           </div>
         }
       >
-        {/* SYSTEM STATUS row */}
         <div className="flex items-center justify-between py-2">
           <div>
             <div className="font-bold text-sm">SYSTEM STATUS</div>
@@ -105,7 +104,6 @@ export function MainPage({ cfg, set }: Props) {
 
         <div className="divider-x my-2" />
 
-        {/* MODE inside Main */}
         <div className="flex items-center justify-between py-2">
           <div>
             <div className="font-bold text-sm">MODE</div>
@@ -148,33 +146,43 @@ export function MainPage({ cfg, set }: Props) {
           <div className="grid gap-3">
             <WeaponRow
               icon={<Sword className="w-4 h-4" style={{ color: "var(--accent)" }} />}
-              label="Weapon Switching (Manual Select)"
+              label="Weapon Switching (Manual Select) — chọn vị trí chuột"
               enabled={cfg.weaponManual}
               onToggle={(v) => set("weaponManual", v)}
             >
-              <div className="grid grid-cols-3 gap-2 items-center mt-2">
+              <div className="grid grid-cols-3 gap-2 items-end mt-2">
                 <LabeledInput
                   label="Delay (ms)"
                   value={cfg.weaponManualDelay}
                   onChange={(v) => set("weaponManualDelay", v)}
                 />
-                <LabeledKey label="Weapon Slot 1" value={cfg.weaponSlot1} onChange={(v) => set("weaponSlot1", v)} />
-                <LabeledKey label="Weapon Slot 2" value={cfg.weaponSlot2} onChange={(v) => set("weaponSlot2", v)} />
+                <LabeledMouse
+                  label="Position 1"
+                  value={cfg.weaponManualPos1}
+                  onChange={(v) => set("weaponManualPos1", v)}
+                />
+                <LabeledMouse
+                  label="Position 2"
+                  value={cfg.weaponManualPos2}
+                  onChange={(v) => set("weaponManualPos2", v)}
+                />
               </div>
             </WeaponRow>
 
             <WeaponRow
               icon={<Swords className="w-4 h-4" style={{ color: "var(--accent-2)" }} />}
-              label="Weapon Switching (Auto)"
+              label="Weapon Switching (Auto) — cycle phím 1 ↔ 2"
               enabled={cfg.weaponAuto}
               onToggle={(v) => set("weaponAuto", v)}
             >
-              <div className="grid grid-cols-2 gap-2 mt-2">
+              <div className="grid grid-cols-3 gap-2 items-end mt-2">
                 <LabeledInput
                   label="Auto Swap Delay (ms)"
                   value={cfg.weaponAutoDelay}
                   onChange={(v) => set("weaponAutoDelay", v)}
                 />
+                <LabeledKey label="Key 1" value={cfg.weaponAutoKey1} onChange={(v) => set("weaponAutoKey1", v)} />
+                <LabeledKey label="Key 2" value={cfg.weaponAutoKey2} onChange={(v) => set("weaponAutoKey2", v)} />
               </div>
             </WeaponRow>
           </div>
@@ -246,7 +254,7 @@ export function MainPage({ cfg, set }: Props) {
           <div>
             <div className="font-bold text-sm">Enable Auto Click</div>
             <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-              Cycles a click action while macro is running.
+              Cycles a left-click action while macro is running.
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -267,7 +275,7 @@ export function MainPage({ cfg, set }: Props) {
         </div>
       </Card>
 
-      {/* HOLD KEY — sits below Auto Clicker */}
+      {/* HOLD KEY */}
       <Card title="Hold Key" icon={<Hand className="w-3.5 h-3.5" />} delay={0.20}>
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="min-w-[180px]">
@@ -301,6 +309,57 @@ export function MainPage({ cfg, set }: Props) {
             </div>
             <div className="self-center">
               <Switch checked={cfg.holdEnabled} onChange={(v) => set("holdEnabled", v)} />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* FISHING ASSIST */}
+      <Card title="Fishing Assist (King Legacy / Blox Fruits)" icon={<Fish className="w-3.5 h-3.5" />} delay={0.24}>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-[200px]">
+            <div className="font-bold text-sm">Enable Fishing</div>
+            <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+              Auto cast → wait → click to reel. Repeat. Tham khảo macro King_Legacy_Fish.
+            </div>
+          </div>
+          <div className="flex items-end gap-3 flex-wrap">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
+                Cast Key
+              </div>
+              <KeyCapture
+                value={cfg.fishingCastKey}
+                onChange={(v) => set("fishingCastKey", v)}
+                className="min-w-[140px]"
+              />
+            </div>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
+                Cast every (ms)
+              </div>
+              <input
+                type="number"
+                min={500}
+                value={cfg.fishingCastDelay}
+                onChange={(e) => set("fishingCastDelay", Math.max(500, Number(e.target.value) || 500))}
+                className="input w-28"
+              />
+            </div>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
+                Reel after (ms)
+              </div>
+              <input
+                type="number"
+                min={100}
+                value={cfg.fishingReelDelay}
+                onChange={(e) => set("fishingReelDelay", Math.max(100, Number(e.target.value) || 100))}
+                className="input w-28"
+              />
+            </div>
+            <div className="self-center">
+              <Switch checked={cfg.fishingEnabled} onChange={(v) => set("fishingEnabled", v)} />
             </div>
           </div>
         </div>
@@ -373,6 +432,15 @@ function LabeledKey({ label, value, onChange }: { label: string; value: string; 
     <div>
       <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>{label}</div>
       <KeyCapture value={value} onChange={onChange} className="w-full justify-between" />
+    </div>
+  );
+}
+
+function LabeledMouse({ label, value, onChange }: { label: string; value: MousePos | null; onChange: (v: MousePos) => void }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>{label}</div>
+      <MousePosCapture value={value} onChange={onChange} className="w-full justify-start" />
     </div>
   );
 }

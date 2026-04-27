@@ -5,6 +5,16 @@
 import type { ThemeId } from "./themes";
 
 export type MacroMode = "Easy" | "Boss Rush" | "Infinity Tower";
+export type GamePresetId =
+  | "custom"
+  | "king-legacy-fish"
+  | "king-legacy-combat"
+  | "blox-fruit-combat"
+  | "blox-fruit-mastery"
+  | "sailor-piece-easy"
+  | "sailor-piece-boss"
+  | "anime-defenders"
+  | "generic-mash";
 
 export interface KeySlot {
   id: string;
@@ -14,17 +24,24 @@ export interface KeySlot {
   assign: "All" | "Melee" | "Sword";
 }
 
+export interface MousePos { x: number; y: number; }
+
 export interface AppConfig {
   // Mode
   mode: MacroMode;
+  gamePreset: GamePresetId;
 
-  // Weapon Switching
+  // Weapon Switching — Manual = mouse positions on screen
   weaponManual: boolean;
   weaponManualDelay: number;
-  weaponSlot1: string;
-  weaponSlot2: string;
+  weaponManualPos1: MousePos | null;
+  weaponManualPos2: MousePos | null;
+
+  // Weapon Switching — Auto = cycles keys 1 and 2 on the keyboard
   weaponAuto: boolean;
   weaponAutoDelay: number;
+  weaponAutoKey1: string;
+  weaponAutoKey2: string;
 
   // Target keys
   slots: KeySlot[];
@@ -38,10 +55,16 @@ export interface AppConfig {
   holdKey: string;
   holdDelay: number;
 
+  // Fishing assist (King Legacy / Blox Fruits style)
+  fishingEnabled: boolean;
+  fishingCastKey: string;
+  fishingCastDelay: number;     // ms to wait between casts
+  fishingReelDelay: number;     // ms to wait before clicking to reel
+
   // Hotkeys
-  toggleKey: string;   // e.g. "F1"
-  showHideKey: string; // e.g. "F2"
-  exitKey: string;     // e.g. "F3"
+  toggleKey: string;
+  showHideKey: string;
+  exitKey: string;
 
   // System
   theme: ThemeId;
@@ -55,21 +78,28 @@ export interface AppConfig {
 
 export const DEFAULT_CONFIG: AppConfig = {
   mode: "Easy",
+  gamePreset: "custom",
   weaponManual: false,
-  weaponManualDelay: 5000,
-  weaponSlot1: "1",
-  weaponSlot2: "2",
+  weaponManualDelay: 100,
+  weaponManualPos1: null,
+  weaponManualPos2: null,
   weaponAuto: false,
-  weaponAutoDelay: 5000,
+  weaponAutoDelay: 100,
+  weaponAutoKey1: "1",
+  weaponAutoKey2: "2",
   slots: [
     { id: crypto.randomUUID(), key: "e", delay: 100, enabled: true, assign: "All" },
-    { id: crypto.randomUUID(), key: "q", delay: 150, enabled: true, assign: "All" },
+    { id: crypto.randomUUID(), key: "q", delay: 100, enabled: true, assign: "All" },
   ],
   autoClick: false,
   autoClickDelay: 100,
   holdEnabled: false,
   holdKey: "Shift",
-  holdDelay: 200,
+  holdDelay: 100,
+  fishingEnabled: false,
+  fishingCastKey: "F",
+  fishingCastDelay: 4000,
+  fishingReelDelay: 1500,
   toggleKey: "F1",
   showHideKey: "F2",
   exitKey: "F3",

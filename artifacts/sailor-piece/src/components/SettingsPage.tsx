@@ -1,28 +1,66 @@
 import { useState } from "react";
-import { Palette, Keyboard, Webhook, Eye, Bug, ChevronDown, ChevronUp } from "lucide-react";
+import { Palette, Keyboard, Webhook, Eye, Bug, ChevronDown, ChevronUp, Gamepad2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "./cheat/Card";
 import { Switch } from "./cheat/Switch";
 import { KeyCapture } from "./KeyCapture";
 import { THEMES, type ThemeId } from "@/lib/themes";
-import type { AppConfig } from "@/lib/storage";
+import { PRESETS } from "@/lib/presets";
+import type { AppConfig, GamePresetId } from "@/lib/storage";
 import { dbg } from "@/lib/debug";
 import { sendDiscord } from "@/lib/macro";
 
 interface Props {
   cfg: AppConfig;
   set: <K extends keyof AppConfig>(key: K, v: AppConfig[K]) => void;
+  applyAll: (patch: Partial<AppConfig>) => void;
 }
 
 const COLLAPSED_COUNT = 8;
 
-export function SettingsPage({ cfg, set }: Props) {
+export function SettingsPage({ cfg, set, applyAll }: Props) {
   const [showAllThemes, setShowAllThemes] = useState(false);
   const visibleThemes = showAllThemes ? THEMES : THEMES.slice(0, COLLAPSED_COUNT);
   const hiddenCount = THEMES.length - COLLAPSED_COUNT;
 
   return (
     <div className="grid gap-4">
+      {/* GAME PRESET */}
+      <Card title="Game Preset" icon={<Gamepad2 className="w-3.5 h-3.5" />}>
+        <div className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>
+          Chọn một preset có sẵn để cấu hình tự động cho game Roblox tương ứng.
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {PRESETS.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => {
+                const patch = p.apply(cfg);
+                applyAll({ ...patch, gamePreset: p.id as GamePresetId });
+                dbg.ok(`Applied preset: ${p.label}`);
+              }}
+              className="rounded-lg p-3 text-left border transition-all"
+              style={{
+                background: "var(--bg-base)",
+                borderColor: cfg.gamePreset === p.id ? "var(--accent)" : "var(--border-soft)",
+                boxShadow: cfg.gamePreset === p.id ? "0 0 18px -6px var(--accent-glow)" : undefined,
+              }}
+            >
+              <div
+                className="font-semibold text-sm"
+                style={{ color: cfg.gamePreset === p.id ? "var(--accent)" : "var(--text-base)" }}
+              >
+                {p.label}
+              </div>
+              <div className="text-[11px] mt-1" style={{ color: "var(--text-muted)" }}>
+                {p.description}
+              </div>
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      {/* APPEARANCE */}
       <Card
         title="Appearance Color"
         icon={<Palette className="w-3.5 h-3.5" />}
@@ -46,7 +84,7 @@ export function SettingsPage({ cfg, set }: Props) {
         }
       >
         <div className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>
-          Choose a color theme. Currently <b style={{ color: "var(--accent)" }}>{THEMES.find(t => t.id === cfg.theme)?.label}</b>.
+          {THEMES.length} themes available. Currently <b style={{ color: "var(--accent)" }}>{THEMES.find(t => t.id === cfg.theme)?.label}</b>.
         </div>
         <div className="grid grid-cols-4 gap-2">
           <AnimatePresence initial={false}>
@@ -127,7 +165,7 @@ export function SettingsPage({ cfg, set }: Props) {
               disabled={!cfg.useWebhook || !cfg.webhookUrl}
               onClick={async () => {
                 try {
-                  await sendDiscord(cfg.webhookUrl, "Test message", "Sailor Piece webhook works.");
+                  await sendDiscord(cfg.webhookUrl, "Test message", "AutoKey-Farm webhook works.");
                   dbg.ok("Webhook test sent");
                 } catch {
                   dbg.err("Webhook test failed");

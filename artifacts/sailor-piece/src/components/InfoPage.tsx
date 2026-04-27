@@ -7,7 +7,8 @@ export function InfoPage() {
     <div className="grid gap-4">
       <Card title="About" icon={<Cpu className="w-3.5 h-3.5" />}>
         <div className="grid gap-2 text-sm">
-          <Row k="Name" v="Sailor Piece" />
+          <Row k="Systems" v="Error Mod Systems" />
+          <Row k="Name" v="AutoKey-Farm" />
           <Row k="Version" v="v1 BETA" />
           <Row k="Original" v="Dhja" />
           <Row k="Port" v="JS / HTML / CSS / JSON" />
@@ -42,12 +43,12 @@ export function InfoPage() {
             <MessageCircle className="w-3.5 h-3.5" /> Join Discord
           </a>
           <a
-            href="https://www.youtube.com/@yatoark"
+            href="https://www.youtube.com/@Dhja"
             target="_blank"
             rel="noreferrer"
             className="btn"
           >
-            <Github className="w-3.5 h-3.5" /> YouTube — @yatoark
+            <Github className="w-3.5 h-3.5" /> YouTube — @Dhja
           </a>
         </div>
       </Card>

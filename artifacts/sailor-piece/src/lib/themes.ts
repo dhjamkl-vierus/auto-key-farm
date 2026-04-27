@@ -20,7 +20,19 @@ export type ThemeId =
   | "gold"
   | "carbon"
   | "inferno"
-  | "mint";
+  | "mint"
+  | "vampire"
+  | "matrix"
+  | "candy"
+  | "steel"
+  | "phantom"
+  | "emerald"
+  | "rose"
+  | "skyblue"
+  | "amethyst"
+  | "neonpink"
+  | "obsidian"
+  | "tropic";
 
 export interface ThemeMeta {
   id: ThemeId;
@@ -51,6 +63,18 @@ export const THEMES: ThemeMeta[] = [
   { id: "carbon", label: "Carbon", swatch: ["#525252", "#fb923c"] },
   { id: "inferno", label: "Inferno", swatch: ["#ef4444", "#facc15"] },
   { id: "mint", label: "Mint", swatch: ["#6ee7b7", "#a7f3d0"] },
+  { id: "vampire", label: "Vampire", swatch: ["#9f1239", "#1e1b4b"] },
+  { id: "matrix", label: "Matrix", swatch: ["#00ff41", "#003b00"] },
+  { id: "candy", label: "Candy", swatch: ["#fb7185", "#a78bfa"] },
+  { id: "steel", label: "Steel", swatch: ["#94a3b8", "#475569"] },
+  { id: "phantom", label: "Phantom", swatch: ["#6366f1", "#1e1b4b"] },
+  { id: "emerald", label: "Emerald", swatch: ["#10b981", "#047857"] },
+  { id: "rose", label: "Rose", swatch: ["#fb7185", "#e11d48"] },
+  { id: "skyblue", label: "Sky Blue", swatch: ["#38bdf8", "#0ea5e9"] },
+  { id: "amethyst", label: "Amethyst", swatch: ["#a855f7", "#7c3aed"] },
+  { id: "neonpink", label: "Neon Pink", swatch: ["#ff10f0", "#ff6ec7"] },
+  { id: "obsidian", label: "Obsidian", swatch: ["#0f0f0f", "#7c3aed"] },
+  { id: "tropic", label: "Tropic", swatch: ["#06b6d4", "#84cc16"] },
 ];
 
 export function applyTheme(id: ThemeId) {
