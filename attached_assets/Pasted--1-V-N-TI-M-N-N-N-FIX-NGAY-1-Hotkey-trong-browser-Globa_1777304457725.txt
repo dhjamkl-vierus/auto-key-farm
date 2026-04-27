@@ -1,0 +1,168 @@
+🧠 ⚠️ 1. VẤN ĐỀ TIỀM ẨN (NÊN FIX NGAY)
+❌ 1. Hotkey trong browser ≠ Global
+
+👉 Hiện tại:
+
+F1/F2/F3 chỉ hoạt động khi tab đang focus
+Không đúng kiểu “tool hack thật”
+
+✅ Fix chuẩn:
+
+// Electron main process
+globalShortcut.register("F1", () => toggleSystem());
+globalShortcut.register("F2", () => toggleMenu());
+globalShortcut.register("F3", () => app.quit());
+
+👉 Nếu không lên Electron → chấp nhận limitation
+
+❌ 2. AutoClick + TargetKey dễ bị “loop chồng”
+
+👉 Nếu user spam ON/OFF nhanh → tạo nhiều interval
+
+✅ Fix chuẩn:
+
+let loop: NodeJS.Timeout | null = null;
+
+export function startLoop(fn: () => void, delay: number) {
+  if (loop) return; // 🔥 chặn duplicate
+
+  loop = setInterval(fn, delay);
+}
+
+export function stopLoop() {
+  if (!loop) return;
+  clearInterval(loop);
+  loop = null;
+}
+❌ 3. Debug ticker vẫn có nguy cơ spam nhẹ
+
+👉 Bạn đã gộp msg, nhưng thiếu cooldown
+
+✅ nâng cấp:
+
+let lastTime = 0;
+
+export function log(msg: string) {
+  const now = Date.now();
+
+  if (now - lastTime < 200) return; // 🔥 throttle
+
+  lastTime = now;
+  console.log(msg);
+}
+🧱 🔥 2. NÂNG CẤP UI (CHO “FEEL TOOL THẬT”)
+🎨 Thêm glow + depth (rất quan trọng)
+.card {
+  background: rgba(20,20,20,0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.card:hover {
+  box-shadow:
+    0 0 10px #00ffcc,
+    0 0 30px rgba(0,255,204,0.3);
+}
+🎬 Animation toggle ON/OFF
+button.active {
+  background: #00ffcc;
+  box-shadow: 0 0 10px #00ffcc;
+}
+🧩 ⚙️ 3. MODE LOGIC (CHUẨN HOÁ)
+
+👉 Hiện bạn đang:
+
+check mode → show/hide UI
+
+👉 Nhưng thiếu logic layer
+
+✅ chuẩn:
+
+export function applyMode(mode: string) {
+  STATE.mode = mode;
+
+  if (mode === "Easy") {
+    STATE.weapon.mode = null;
+  }
+
+  if (mode === "Boss Rush" || mode === "Infinity Tower") {
+    STATE.weapon.mode = "manual"; // default
+  }
+}
+🎯 4. TARGET KEY SYSTEM (PRO VERSION)
+
+👉 Bạn làm basic rồi, nhưng thiếu:
+
+❌ lỗi phổ biến:
+key không normalize
+delay không apply riêng từng slot
+✅ version xịn:
+export function normalizeKey(key: string) {
+  return key.length === 1 ? key.toUpperCase() : key;
+}
+
+export function handleTarget(slot) {
+  if (!STATE.systemOn) return;
+
+  setTimeout(() => {
+    debug(`Trigger ${slot.key}`);
+  }, slot.delay);
+}
+⚔️ 5. WEAPON SWITCH (LOGIC ĐÚNG)
+
+👉 Hiện bạn mới UI, cần logic:
+
+export function weaponLoop() {
+  if (STATE.weapon.mode === "manual") {
+    const [s1, s2] = STATE.weapon.slots;
+
+    setTimeout(() => debug(`Slot ${s1}`), 0);
+    setTimeout(() => debug(`Slot ${s2}`), STATE.weapon.delay);
+  }
+
+  if (STATE.weapon.mode === "auto") {
+    debug("Auto switch");
+  }
+}
+🌍 6. IP + PING (CHUẨN HƠN)
+
+👉 fetch Google dễ bị block
+
+✅ dùng:
+
+await fetch("https://1.1.1.1", { mode: "no-cors" });
+
+👉 ổn định hơn
+
+🎨 7. THEME PRO (KHÔNG CHỈ BG)
+
+👉 bạn đang đổi mỗi background → nhìn vẫn “fake”
+
+✅ nâng cấp:
+document.documentElement.style.setProperty("--primary", "#00ffcc");
+document.documentElement.style.setProperty("--bg", "#0d0d0d");
+body {
+  background: var(--bg);
+}
+
+button {
+  background: var(--primary);
+}
+💾 8. STORAGE CHUẨN (ANTI CORRUPT)
+export function loadSafe(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+💣 9. FEATURE NÊN THÊM (LEVEL UP)
+
+👉 nếu muốn giống tool thật 90%:
+
+🔥 Drag window (Electron)
+🔥 Always on top
+🔥 Blur background
+🔥 Preset config (save nhiều profile)
+🔥 Keybind riêng từng mode
+🔥 Sound click nhẹ (rất “hack tool vibe”)

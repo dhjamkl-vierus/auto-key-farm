@@ -1,12 +1,12 @@
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 import {
   Power, Cog, Target, MousePointerClick, Plus, Minus, Trash2,
-  Sword, Swords,
+  Sword, Swords, Hand,
 } from "lucide-react";
 import { Card } from "./cheat/Card";
 import { Switch } from "./cheat/Switch";
-import type { AppConfig, KeySlot, MacroMode } from "@/lib/storage";
+import { type AppConfig, type KeySlot, type MacroMode, isFirstEverVisit } from "@/lib/storage";
 import { macro, formatRuntime, type MacroState } from "@/lib/macro";
 import { dbg } from "@/lib/debug";
 import { KeyCapture } from "./KeyCapture";
@@ -25,6 +25,10 @@ function useMacroState(): MacroState {
 export function MainPage({ cfg, set }: Props) {
   const state = useMacroState();
   const showWeapon = cfg.mode !== "Easy";
+
+  // First-ever open => "Chào Mừng Người Dùng!!"
+  // Any subsequent open (after closing) => "Chào mừng trở lại!"
+  const isFirst = useMemo(() => isFirstEverVisit(), []);
 
   const updateSlot = (id: string, patch: Partial<KeySlot>) => {
     set("slots", cfg.slots.map((s) => (s.id === id ? { ...s, ...patch } : s)));
@@ -52,14 +56,14 @@ export function MainPage({ cfg, set }: Props) {
       >
         <div className="text-lg font-bold flex items-center gap-2">
           <span style={{ color: "var(--accent)" }}>▸</span>
-          Chào mừng trở lại!
+          {isFirst ? "Chào Mừng Người Dùng!!" : "Chào mừng trở lại!"}
         </div>
         <div className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
-          ▸ Sailor Piece electron — Trải nghiệm game theo cách của bạn.
+          ▸ Sailor Piece Systems — Hệ Thống trải nghiệm chế độ AutoKey-Farm
         </div>
       </motion.div>
 
-      {/* MAIN — system status (was "Status") */}
+      {/* MAIN — system status */}
       <Card
         title="Main"
         icon={<Power className="w-3.5 h-3.5" />}
@@ -80,7 +84,7 @@ export function MainPage({ cfg, set }: Props) {
           </div>
         }
       >
-        {/* SYSTEM STATUS row — horizontal alignment per spec */}
+        {/* SYSTEM STATUS row */}
         <div className="flex items-center justify-between py-2">
           <div>
             <div className="font-bold text-sm">SYSTEM STATUS</div>
@@ -90,7 +94,7 @@ export function MainPage({ cfg, set }: Props) {
           </div>
           <div className="flex items-center gap-3">
             <span
-              className="font-mono text-xs font-bold"
+              className="font-mono text-xs font-bold w-7 text-right"
               style={{ color: state.active ? "var(--good)" : "var(--bad)" }}
             >
               {state.active ? "ON" : "OFF"}
@@ -101,7 +105,7 @@ export function MainPage({ cfg, set }: Props) {
 
         <div className="divider-x my-2" />
 
-        {/* Mode Setting (inside Main, per spec) */}
+        {/* MODE inside Main */}
         <div className="flex items-center justify-between py-2">
           <div>
             <div className="font-bold text-sm">MODE</div>
@@ -130,7 +134,6 @@ export function MainPage({ cfg, set }: Props) {
           </div>
         </div>
 
-        {/* Quick stats */}
         <div className="divider-x my-2" />
         <div className="grid grid-cols-3 gap-2 mt-2 text-center">
           <Stat label="Sends" value={state.totalSends} />
@@ -139,7 +142,7 @@ export function MainPage({ cfg, set }: Props) {
         </div>
       </Card>
 
-      {/* MODE SETTINGS — Weapon switching, only when mode != Easy */}
+      {/* MODE SETTINGS — Weapon switching */}
       {showWeapon && (
         <Card title="Mode Settings" icon={<Cog className="w-3.5 h-3.5" />} delay={0.08}>
           <div className="grid gap-3">
@@ -194,7 +197,7 @@ export function MainPage({ cfg, set }: Props) {
           </div>
         }
       >
-        <div className="grid grid-cols-[40px_1fr_120px_30px] gap-2 mb-2 text-[10px] font-bold tracking-wider uppercase" style={{ color: "var(--text-muted)" }}>
+        <div className="grid grid-cols-[68px_1fr_120px_36px] gap-2 mb-2 text-[10px] font-bold tracking-wider uppercase" style={{ color: "var(--text-muted)" }}>
           <div className="text-center">On</div>
           <div>Key</div>
           <div>Delay (ms)</div>
@@ -207,7 +210,7 @@ export function MainPage({ cfg, set }: Props) {
               initial={{ opacity: 0, x: -6 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.18, delay: idx * 0.02 }}
-              className="grid grid-cols-[40px_1fr_120px_30px] gap-2 items-center"
+              className="grid grid-cols-[68px_1fr_120px_36px] gap-2 items-center"
             >
               <div className="flex items-center justify-center">
                 <Switch checked={s.enabled} onChange={(v) => updateSlot(s.id, { enabled: v })} />
@@ -260,6 +263,45 @@ export function MainPage({ cfg, set }: Props) {
               />
             </div>
             <Switch checked={cfg.autoClick} onChange={(v) => set("autoClick", v)} />
+          </div>
+        </div>
+      </Card>
+
+      {/* HOLD KEY — sits below Auto Clicker */}
+      <Card title="Hold Key" icon={<Hand className="w-3.5 h-3.5" />} delay={0.20}>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-[180px]">
+            <div className="font-bold text-sm">Enable Hold</div>
+            <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+              Keeps a key "held" by re-firing it on the chosen interval.
+            </div>
+          </div>
+          <div className="flex items-end gap-3">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
+                Key
+              </div>
+              <KeyCapture
+                value={cfg.holdKey}
+                onChange={(v) => set("holdKey", v)}
+                className="min-w-[150px]"
+              />
+            </div>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
+                Delay (ms)
+              </div>
+              <input
+                type="number"
+                min={20}
+                value={cfg.holdDelay}
+                onChange={(e) => set("holdDelay", Math.max(20, Number(e.target.value) || 20))}
+                className="input w-28"
+              />
+            </div>
+            <div className="self-center">
+              <Switch checked={cfg.holdEnabled} onChange={(v) => set("holdEnabled", v)} />
+            </div>
           </div>
         </div>
       </Card>

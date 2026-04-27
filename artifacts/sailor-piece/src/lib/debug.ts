@@ -1,6 +1,7 @@
 /**
- * Inline debug log with anti-spam de-duplication.
- * Mirrors the AHK LastLogMsg / LogMsgCount trick.
+ * Inline debug log with anti-spam de-duplication AND throttle.
+ * Mirrors the AHK LastLogMsg / LogMsgCount trick + adds a 200ms cooldown
+ * so a runaway timer can never flood the UI.
  */
 import { useSyncExternalStore } from "react";
 
@@ -15,8 +16,10 @@ export interface LogEntry {
 }
 
 const MAX = 80;
+const THROTTLE_MS = 180;
 let _id = 0;
 let entries: LogEntry[] = [];
+let lastEmit = 0;
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -25,15 +28,24 @@ function notify() {
 }
 
 export function log(level: LogLevel, msg: string) {
+  const now = Date.now();
   const last = entries[entries.length - 1];
+
+  // Same message back-to-back? Just bump the count, skip notifying too often.
   if (last && last.msg === msg && last.level === level) {
     last.count += 1;
-    last.ts = Date.now();
+    last.ts = now;
+    if (now - lastEmit < THROTTLE_MS) return;
+    lastEmit = now;
     notify();
     return;
   }
-  entries.push({ id: ++_id, ts: Date.now(), level, msg, count: 1 });
+
+  // New message: always insert, but throttle pure-spam-different-msg too.
+  entries.push({ id: ++_id, ts: now, level, msg, count: 1 });
   if (entries.length > MAX) entries = entries.slice(entries.length - MAX);
+  if (now - lastEmit < THROTTLE_MS && level === "info") return;
+  lastEmit = now;
   notify();
 }
 

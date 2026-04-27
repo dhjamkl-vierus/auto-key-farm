@@ -7,6 +7,7 @@ import { StatusStrip } from "@/components/StatusStrip";
 import { MainPage } from "@/components/MainPage";
 import { SettingsPage } from "@/components/SettingsPage";
 import { InfoPage } from "@/components/InfoPage";
+import { ComingSoonPage } from "@/components/ComingSoonPage";
 import { DebugTicker } from "@/components/DebugTicker";
 import { type AppConfig, loadConfig, saveConfig } from "@/lib/storage";
 import { applyTheme } from "@/lib/themes";
@@ -144,6 +145,7 @@ export default function App() {
                 {tab === "home" && <MainPage cfg={cfg} set={set} />}
                 {tab === "settings" && <SettingsPage cfg={cfg} set={set} />}
                 {tab === "info" && <InfoPage />}
+                {tab === "soon" && <ComingSoonPage />}
               </main>
             </div>
 

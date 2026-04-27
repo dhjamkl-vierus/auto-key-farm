@@ -7,9 +7,9 @@ export function InfoPage() {
     <div className="grid gap-4">
       <Card title="About" icon={<Cpu className="w-3.5 h-3.5" />}>
         <div className="grid gap-2 text-sm">
-          <Row k="Name" v="Sailor Piece electron" />
-          <Row k="Version" v="v5.1 BETA" />
-          <Row k="Original" v="Yato (AHK Keyspammer)" />
+          <Row k="Name" v="Sailor Piece" />
+          <Row k="Version" v="v1 BETA" />
+          <Row k="Original" v="Dhja" />
           <Row k="Port" v="JS / HTML / CSS / JSON" />
           <Row k="License" v="CC BY-NC" />
         </div>

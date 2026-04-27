@@ -1,6 +1,6 @@
-import { Home, Info, Settings as SettingsIcon, MessageCircle } from "lucide-react";
+import { Home, Info, Settings as SettingsIcon, MessageCircle, Sparkles } from "lucide-react";
 
-export type TabId = "home" | "info" | "settings";
+export type TabId = "home" | "info" | "settings" | "soon";
 
 interface Props {
   active: TabId;
@@ -11,6 +11,7 @@ const items: { id: TabId; label: string; icon: typeof Home }[] = [
   { id: "home", label: "Trang Chủ", icon: Home },
   { id: "info", label: "Thông Tin", icon: Info },
   { id: "settings", label: "Cài Đặt", icon: SettingsIcon },
+  { id: "soon", label: "Comming Soon....", icon: Sparkles },
 ];
 
 export function Sidebar({ active, onChange }: Props) {
@@ -37,7 +38,7 @@ export function Sidebar({ active, onChange }: Props) {
                 />
               )}
               <Icon className="w-4 h-4" />
-              <span>{label}</span>
+              <span className="truncate">{label}</span>
             </button>
           );
         })}
@@ -53,7 +54,7 @@ export function Sidebar({ active, onChange }: Props) {
           <MessageCircle className="w-3.5 h-3.5" /> Discord
         </a>
         <div className="text-[10px] text-center" style={{ color: "var(--text-muted)" }}>
-          Original by <span style={{ color: "var(--accent)" }}>Yato</span>
+          Original By <span style={{ color: "var(--accent)" }}>Dhja</span>
         </div>
       </div>
     </aside>

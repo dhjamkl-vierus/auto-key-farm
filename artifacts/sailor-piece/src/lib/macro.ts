@@ -6,9 +6,15 @@
  * macro: it emits debug events on the same intervals the AHK script would
  * spam keys. The visual behavior (timers, status, runtime, debug log,
  * weapon swap cadence) is identical to the desktop tool.
+ *
+ * Hardening applied (per code-review notes):
+ *  - Single-source timer registry, every start clears any existing timers
+ *    before scheduling new ones (no duplicate-loop risk on rapid ON/OFF).
+ *  - Mode normalization in one place (applyMode).
+ *  - Per-slot key normalization.
  */
 import { dbg } from "./debug";
-import type { AppConfig, KeySlot } from "./storage";
+import { normalizeKey, type AppConfig, type KeySlot, type MacroMode } from "./storage";
 
 type Listener = (state: MacroState) => void;
 
@@ -35,6 +41,7 @@ class MacroEngine {
   private listeners = new Set<Listener>();
   private timers: number[] = [];
   private clickTimer: number | null = null;
+  private holdTimer: number | null = null;
   private meleeManualTimer: number | null = null;
   private meleeAutoTimer: number | null = null;
   private runtimeTimer: number | null = null;
@@ -56,6 +63,7 @@ class MacroEngine {
     this.timers.forEach((t) => clearInterval(t));
     this.timers = [];
     if (this.clickTimer != null) { clearInterval(this.clickTimer); this.clickTimer = null; }
+    if (this.holdTimer != null) { clearInterval(this.holdTimer); this.holdTimer = null; }
     if (this.meleeManualTimer != null) { clearInterval(this.meleeManualTimer); this.meleeManualTimer = null; }
     if (this.meleeAutoTimer != null) { clearInterval(this.meleeAutoTimer); this.meleeAutoTimer = null; }
     if (this.runtimeTimer != null) { clearInterval(this.runtimeTimer); this.runtimeTimer = null; }
@@ -63,19 +71,18 @@ class MacroEngine {
   }
 
   setConfig(cfg: AppConfig) {
-    this.cfg = cfg;
+    this.cfg = applyMode(cfg);
     if (this.state.active) {
-      // hot-reload while running
-      this.stop(true);
-      this.start();
+      // hot-reload while running — clearAllTimers prevents duplicates
+      this.clearAllTimers();
+      this.scheduleAll();
     }
   }
 
   start() {
     if (!this.cfg) return;
-    if (this.state.active) return;
+    if (this.state.active) return; // 🔥 chặn duplicate
 
-    const cfg = this.cfg;
     this.state = {
       ...this.state,
       active: true,
@@ -85,13 +92,18 @@ class MacroEngine {
     };
     this.emit();
 
-    dbg.ok(`Macro toggled ON — mode "${cfg.mode}"`);
+    dbg.ok(`Macro toggled ON — mode "${this.cfg.mode}"`);
+    this.clearAllTimers(); // belt-and-braces
+    this.scheduleAll();
+  }
 
-    // Per-key timers
+  private scheduleAll() {
+    if (!this.cfg) return;
+    const cfg = this.cfg;
+
     const activeSlots = cfg.slots.filter((s) => s.enabled && s.key.trim().length > 0);
     activeSlots.forEach((slot) => this.startSlotTimer(slot));
 
-    // Auto Click
     if (cfg.autoClick) {
       this.clickTimer = window.setInterval(() => {
         this.state.totalClicks += 1;
@@ -100,7 +112,15 @@ class MacroEngine {
       }, Math.max(20, cfg.autoClickDelay));
     }
 
-    // Weapon swap (manual: 1 <-> 2 keys)
+    if (cfg.holdEnabled && cfg.holdKey) {
+      const k = normalizeKey(cfg.holdKey);
+      this.holdTimer = window.setInterval(() => {
+        this.state.totalSends += 1;
+        this.emit();
+        dbg.info(`Hold "${k}" tick (${cfg.holdDelay}ms)`);
+      }, Math.max(20, cfg.holdDelay));
+    }
+
     if (cfg.mode !== "Easy" && cfg.weaponManual) {
       this.meleeManualTimer = window.setInterval(() => {
         const nextSlot = this.state.currentMelee === 1 ? 2 : 1;
@@ -108,11 +128,10 @@ class MacroEngine {
         this.state.currentMelee = nextSlot as 1 | 2;
         this.state.totalSends += 1;
         this.emit();
-        dbg.info(`Weapon swap → slot ${nextSlot} (key "${key}")`);
+        dbg.info(`Weapon swap → slot ${nextSlot} (key "${normalizeKey(key)}")`);
       }, Math.max(50, cfg.weaponManualDelay));
     }
 
-    // Weapon swap (auto: cycle "1" key)
     if (cfg.mode !== "Easy" && cfg.weaponAuto) {
       this.meleeAutoTimer = window.setInterval(() => {
         this.state.totalSends += 1;
@@ -121,7 +140,6 @@ class MacroEngine {
       }, Math.max(50, cfg.weaponAutoDelay));
     }
 
-    // Runtime ticker
     this.runtimeTimer = window.setInterval(() => {
       if (this.state.startedAt) {
         this.state.runtimeMs = Date.now() - this.state.startedAt;
@@ -129,20 +147,21 @@ class MacroEngine {
       }
     }, 250);
 
-    // Webhook heartbeat
     if (cfg.useWebhook && cfg.webhookUrl) {
       this.webhookTimer = window.setInterval(() => {
-        sendDiscord(cfg.webhookUrl, "Sailor Piece status", `Runtime: ${formatRuntime(this.state.runtimeMs)} • sends: ${this.state.totalSends}`);
+        sendDiscord(cfg.webhookUrl, "Sailor Piece status",
+          `Runtime: ${formatRuntime(this.state.runtimeMs)} • sends: ${this.state.totalSends}`);
       }, Math.max(60_000, cfg.webhookIntervalMin * 60_000));
       sendDiscord(cfg.webhookUrl, "Macro started", `Mode: ${cfg.mode}`);
     }
   }
 
   private startSlotTimer(slot: KeySlot) {
+    const k = normalizeKey(slot.key);
     const t = window.setInterval(() => {
       this.state.totalSends += 1;
       this.emit();
-      dbg.info(`Sent key "${slot.key}" (${slot.delay}ms${slot.assign !== "All" ? ", " + slot.assign : ""})`);
+      dbg.info(`Sent key "${k}" (${slot.delay}ms${slot.assign !== "All" ? ", " + slot.assign : ""})`);
     }, Math.max(20, slot.delay));
     this.timers.push(t);
   }
@@ -172,6 +191,14 @@ class MacroEngine {
   }
 }
 
+/** Mode logic layer — mirrors the Pasted "applyMode" suggestion. */
+export function applyMode(cfg: AppConfig): AppConfig {
+  if (cfg.mode === "Easy") {
+    return { ...cfg, weaponManual: false, weaponAuto: false };
+  }
+  return cfg;
+}
+
 export const macro = new MacroEngine();
 
 export function formatRuntime(ms: number) {
@@ -198,4 +225,5 @@ async function sendDiscord(url: string, title: string, description: string) {
   }
 }
 
+export type { MacroMode };
 export { sendDiscord };

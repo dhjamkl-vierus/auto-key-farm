@@ -33,6 +33,11 @@ export interface AppConfig {
   autoClick: boolean;
   autoClickDelay: number;
 
+  // Hold Key (sits below Auto Clicker)
+  holdEnabled: boolean;
+  holdKey: string;
+  holdDelay: number;
+
   // Hotkeys
   toggleKey: string;   // e.g. "F1"
   showHideKey: string; // e.g. "F2"
@@ -62,6 +67,9 @@ export const DEFAULT_CONFIG: AppConfig = {
   ],
   autoClick: false,
   autoClickDelay: 100,
+  holdEnabled: false,
+  holdKey: "Shift",
+  holdDelay: 200,
   toggleKey: "F1",
   showHideKey: "F2",
   exitKey: "F3",
@@ -73,7 +81,9 @@ export const DEFAULT_CONFIG: AppConfig = {
 };
 
 const STORAGE_KEY = "sailor-piece.config.v1";
+const VISITED_KEY = "sailor-piece.visited";
 
+/** Anti-corrupt loader: any parse error falls back to defaults */
 export function loadConfig(): AppConfig {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -91,4 +101,22 @@ export function saveConfig(cfg: AppConfig) {
   } catch {
     /* ignore quota errors */
   }
+}
+
+/** Returns true the very first time the app is opened on this device. */
+export function isFirstEverVisit(): boolean {
+  try {
+    const v = localStorage.getItem(VISITED_KEY);
+    if (v) return false;
+    localStorage.setItem(VISITED_KEY, String(Date.now()));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Normalize a single character to upper-case (named keys preserved). */
+export function normalizeKey(key: string): string {
+  if (!key) return "";
+  return key.length === 1 ? key.toUpperCase() : key;
 }

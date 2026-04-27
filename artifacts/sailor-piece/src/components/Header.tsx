@@ -66,13 +66,7 @@ export function Header({ onMinimize, onExit }: Props) {
             className="font-display tracking-[0.18em] text-3xl font-bold glow-text"
             style={{ color: "var(--text-base)" }}
           >
-            SAILOR PIECE{" "}
-            <span
-              className="italic font-light text-2xl"
-              style={{ color: "var(--accent)", letterSpacing: "0.04em" }}
-            >
-              electron
-            </span>
+            SAILOR PIECE
           </motion.div>
           <motion.div
             initial={{ opacity: 0 }}
@@ -81,9 +75,9 @@ export function Header({ onMinimize, onExit }: Props) {
             className="text-xs mt-1 flex items-center gap-1.5"
             style={{ color: "var(--text-dim)" }}
           >
-            <span style={{ color: "var(--accent)" }}>⚡</span> Next Generation Script
+            <span style={{ color: "var(--accent)" }}>⚡</span> Next Generation Systems
             <span className="opacity-30">|</span>
-            <span className="font-mono">v5.1 BETA</span>
+            <span className="font-mono">v1 BETA</span>
           </motion.div>
         </div>
       </div>
