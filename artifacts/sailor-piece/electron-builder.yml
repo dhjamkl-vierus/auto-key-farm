@@ -1,0 +1,35 @@
+appId: com.dhja.autokey-farm
+productName: AutoKey-Farm
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**/*
+  - electron/**/*
+  - package.json
+  - "!**/*.map"
+asar: true
+asarUnpack:
+  - "node_modules/@nut-tree-fork/**/*"
+  - "node_modules/libnut*/**/*"
+extraMetadata:
+  main: electron/main.cjs
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  shortcutName: AutoKey-Farm
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+linux:
+  target:
+    - AppImage

@@ -16,6 +16,7 @@
  */
 import { dbg } from "./debug";
 import { normalizeKey, type AppConfig, type KeySlot, type MacroMode } from "./storage";
+import * as desktop from "./desktop";
 
 type Listener = (state: MacroState) => void;
 
@@ -115,6 +116,7 @@ class MacroEngine {
       this.clickTimer = window.setInterval(() => {
         this.state.totalClicks += 1;
         this.emit();
+        desktop.click();
         dbg.info(`Auto-click (${cfg.autoClickDelay}ms)`);
       }, Math.max(20, cfg.autoClickDelay));
     }
@@ -124,6 +126,7 @@ class MacroEngine {
       this.holdTimer = window.setInterval(() => {
         this.state.totalSends += 1;
         this.emit();
+        desktop.pressKey(k);
         dbg.info(`Hold "${k}" tick (${cfg.holdDelay}ms)`);
       }, Math.max(20, cfg.holdDelay));
     }
@@ -137,6 +140,7 @@ class MacroEngine {
         this.state.totalSends += 1;
         this.emit();
         if (pos) {
+          desktop.clickAt(pos.x, pos.y);
           dbg.info(`Mouse-click slot ${next} at (${pos.x}, ${pos.y})`);
         } else {
           dbg.warn(`Slot ${next} mouse position not set`);
@@ -151,6 +155,7 @@ class MacroEngine {
         this.state.currentWeapon = next as 1 | 2;
         this.state.totalSends += 1;
         this.emit();
+        desktop.pressKey(String(next));
         dbg.info(`Pressed "${next}" (auto weapon swap)`);
       }, Math.max(50, cfg.weaponAutoDelay));
     }
@@ -158,14 +163,17 @@ class MacroEngine {
     // Fishing: cast key + reel click on a stagger
     if (cfg.fishingEnabled) {
       const cast = () => {
-        dbg.ok(`Cast rod — pressed "${normalizeKey(cfg.fishingCastKey)}"`);
+        const castKey = normalizeKey(cfg.fishingCastKey);
+        dbg.ok(`Cast rod — pressed "${castKey}"`);
         this.state.totalSends += 1;
         this.emit();
+        desktop.pressKey(castKey);
         window.setTimeout(() => {
           if (!this.state.active) return;
           dbg.ok(`Reel — mouse click`);
           this.state.totalClicks += 1;
           this.emit();
+          desktop.click();
         }, Math.max(100, cfg.fishingReelDelay));
       };
       cast();
@@ -194,6 +202,7 @@ class MacroEngine {
     const t = window.setInterval(() => {
       this.state.totalSends += 1;
       this.emit();
+      desktop.pressKey(k);
       dbg.info(`Sent key "${k}" (${slot.delay}ms${slot.assign !== "All" ? ", " + slot.assign : ""})`);
     }, Math.max(20, slot.delay));
     this.timers.push(t);

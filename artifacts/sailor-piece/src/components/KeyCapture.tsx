@@ -9,42 +9,57 @@ interface Props {
 }
 
 /**
- * Bullet-proof key capture:
- *  - onMouseDown.preventDefault() so the button never gets keyboard focus,
- *    which means Space/Enter can never re-trigger this same button.
- *  - useRef wraps onChange so the effect ONLY depends on `recording`
- *    (parent re-renders no longer churn the listener).
- *  - The handler always calls setRecording(false) at the end → button always
- *    leaves recording mode and re-renders showing the new key label.
+ * Bullet-proof key capture.
+ * Pattern: install the keydown listener INSIDE onClick (no useEffect),
+ * remove it on first keypress. A `captured` ref guards against double-fire
+ * from key auto-repeat or multiple events queued before React re-renders.
+ * `setRecording(false)` is the LAST thing the handler does, so the button
+ * is guaranteed to leave recording mode and re-render with the new label.
  */
 export function KeyCapture({ value, onChange, className = "", placeholder = "Press a key" }: Props) {
   const [recording, setRecording] = useState(false);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const cleanupRef = useRef<(() => void) | null>(null);
 
-  useEffect(() => {
-    if (!recording) return;
+  // Safety: if the component unmounts while recording, drop the listener.
+  useEffect(() => () => { cleanupRef.current?.(); cleanupRef.current = null; }, []);
+
+  const startCapture = () => {
+    // If already recording, ignore extra clicks (button is sticky).
+    if (cleanupRef.current) return;
+    setRecording(true);
+
+    let captured = false;
     const handler = (e: KeyboardEvent) => {
-      // Pure modifiers? Wait for the real key.
+      if (captured) return;
+      // Pure modifier keys: wait for the actual key.
       if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return;
       e.preventDefault();
       e.stopPropagation();
-      if (e.key === "Escape") {
-        setRecording(false);
-        return;
+      captured = true;
+      cleanup();
+      if (e.key !== "Escape") {
+        onChangeRef.current(getKeyLabel(e));
       }
-      onChangeRef.current(getKeyLabel(e));
-      setRecording(false);
+      // Force the state flip into a fresh microtask so React commits the
+      // parent's `value` update first, then this component re-renders with
+      // recording=false AND the new value already in props.
+      Promise.resolve().then(() => setRecording(false));
+    };
+    const cleanup = () => {
+      window.removeEventListener("keydown", handler, true);
+      cleanupRef.current = null;
     };
     window.addEventListener("keydown", handler, true);
-    return () => window.removeEventListener("keydown", handler, true);
-  }, [recording]);
+    cleanupRef.current = cleanup;
+  };
 
   return (
     <button
       type="button"
       onMouseDown={(e) => e.preventDefault()}
-      onClick={() => setRecording(true)}
+      onClick={startCapture}
       className={`btn ${className}`}
     >
       <span className="kbd">{value || "—"}</span>

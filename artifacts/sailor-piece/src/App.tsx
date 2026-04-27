@@ -14,6 +14,7 @@ import { applyTheme } from "@/lib/themes";
 import { macro } from "@/lib/macro";
 import { matchesShortcut } from "@/lib/keynames";
 import { dbg } from "@/lib/debug";
+import { initDesktop } from "@/lib/desktop";
 import { Power } from "lucide-react";
 
 export default function App() {
@@ -22,6 +23,11 @@ export default function App() {
   const [hidden, setHidden] = useState(false);
   const [exited, setExited] = useState(false);
   const cfgRef = useRef(cfg);
+
+  // One-time bridge bring-up (Electron only; no-op in browser).
+  useEffect(() => {
+    initDesktop();
+  }, []);
 
   // Persist + apply
   useEffect(() => {

@@ -217,7 +217,7 @@ export function MainPage({ cfg, set }: Props) {
         }
       >
         <div className="grid grid-cols-[68px_1fr_120px_36px] gap-2 mb-2 text-[10px] font-bold tracking-wider uppercase" style={{ color: "var(--text-muted)" }}>
-          <div className="text-center">On</div>
+          <div className="text-center">ON/OFF</div>
           <div>Key</div>
           <div>Delay (ms)</div>
           <div></div>
