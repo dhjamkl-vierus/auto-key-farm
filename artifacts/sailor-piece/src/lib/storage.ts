@@ -3,7 +3,10 @@
  * One JSON blob in localStorage = one preset config.
  */
 import type { ThemeId } from "./themes";
+import type { Lang } from "@/i18n";
+import { DEFAULT_LANG, isLang } from "@/i18n";
 
+export type FishingGame = "king-legacy" | "blox-fruits";
 export type MacroMode = "Easy" | "Boss Rush" | "Infinity Tower";
 export type GamePresetId =
   | "custom"
@@ -57,9 +60,11 @@ export interface AppConfig {
 
   // Fishing assist (King Legacy / Blox Fruits style)
   fishingEnabled: boolean;
+  fishingGame: FishingGame;     // which game profile is active
   fishingCastKey: string;
   fishingCastDelay: number;     // ms to wait between casts
   fishingReelDelay: number;     // ms to wait before clicking to reel
+  fishingCastHoldMs: number;    // ms to hold mouse for cast (King Legacy specific)
 
   // Hotkeys
   toggleKey: string;
@@ -74,6 +79,9 @@ export interface AppConfig {
 
   // Inline debug behavior
   debugEnabled: boolean;
+
+  // Menu language
+  language: Lang;
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
@@ -96,9 +104,11 @@ export const DEFAULT_CONFIG: AppConfig = {
   holdKey: "Shift",
   holdDelay: 100,
   fishingEnabled: false,
+  fishingGame: "king-legacy",
   fishingCastKey: "F",
   fishingCastDelay: 4000,
   fishingReelDelay: 1500,
+  fishingCastHoldMs: 1200,
   toggleKey: "F1",
   showHideKey: "F2",
   exitKey: "F3",
@@ -107,6 +117,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   useWebhook: false,
   webhookIntervalMin: 10,
   debugEnabled: true,
+  language: DEFAULT_LANG,
 };
 
 const STORAGE_KEY = "sailor-piece.config.v1";
@@ -118,7 +129,13 @@ export function loadConfig(): AppConfig {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...DEFAULT_CONFIG };
     const parsed = JSON.parse(raw) as Partial<AppConfig>;
-    return { ...DEFAULT_CONFIG, ...parsed, slots: parsed.slots ?? DEFAULT_CONFIG.slots };
+    const lang = isLang(parsed.language) ? parsed.language : DEFAULT_CONFIG.language;
+    return {
+      ...DEFAULT_CONFIG,
+      ...parsed,
+      language: lang,
+      slots: parsed.slots ?? DEFAULT_CONFIG.slots,
+    };
   } catch {
     return { ...DEFAULT_CONFIG };
   }

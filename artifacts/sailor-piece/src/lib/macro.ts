@@ -160,25 +160,43 @@ class MacroEngine {
       }, Math.max(50, cfg.weaponAutoDelay));
     }
 
-    // Fishing: cast key + reel click on a stagger
-    if (cfg.fishingEnabled) {
+    // Fishing assist — only the King Legacy routine is implemented.
+    // Blox Fruits sub-mode is shown as "Coming Soon" in the UI and does not run.
+    if (cfg.fishingEnabled && cfg.fishingGame === "king-legacy") {
+      // Generic King Legacy fishing routine:
+      //   1) press the cast key (equip rod / start cast)
+      //   2) click the mouse to actually cast
+      //   3) wait `castHoldMs` for the bait to land + `reelDelay` for a bite
+      //   4) click again to reel in
+      // Then loop with `castDelay` between rounds.
       const cast = () => {
         const castKey = normalizeKey(cfg.fishingCastKey);
-        dbg.ok(`Cast rod — pressed "${castKey}"`);
+        dbg.ok(`KL fish — equip & cast "${castKey}"`);
         this.state.totalSends += 1;
         this.emit();
         desktop.pressKey(castKey);
+        const holdMs = Math.max(100, cfg.fishingCastHoldMs);
+        const reelMs = Math.max(100, cfg.fishingReelDelay);
+        // Cast click after a short hold so the rod animation triggers.
         window.setTimeout(() => {
           if (!this.state.active) return;
-          dbg.ok(`Reel — mouse click`);
           this.state.totalClicks += 1;
           this.emit();
           desktop.click();
-        }, Math.max(100, cfg.fishingReelDelay));
+          dbg.info(`KL fish — cast click (after ${holdMs}ms)`);
+          // Reel click once the bite window passes.
+          window.setTimeout(() => {
+            if (!this.state.active) return;
+            this.state.totalClicks += 1;
+            this.emit();
+            desktop.click();
+            dbg.ok(`KL fish — reel click`);
+          }, reelMs);
+        }, holdMs);
       };
       cast();
       this.fishingTimer = window.setInterval(cast,
-        Math.max(500, cfg.fishingCastDelay + cfg.fishingReelDelay));
+        Math.max(500, cfg.fishingCastDelay + cfg.fishingCastHoldMs + cfg.fishingReelDelay));
     }
 
     this.runtimeTimer = window.setInterval(() => {

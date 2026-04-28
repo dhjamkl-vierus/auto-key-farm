@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
 import { Sparkles, Rocket, Lock } from "lucide-react";
+import { useT } from "@/i18n";
 
 export function ComingSoonPage() {
+  const t = useT();
   return (
     <div className="h-full flex items-center justify-center">
       <motion.div
@@ -37,7 +39,7 @@ export function ComingSoonPage() {
             className="font-display text-4xl font-bold tracking-[0.2em] glow-text"
             style={{ color: "var(--text-base)" }}
           >
-            COMMING SOON......
+            {t("soon.title")}
           </motion.h1>
 
           <motion.div
@@ -47,7 +49,7 @@ export function ComingSoonPage() {
             className="text-2xl font-bold mt-3"
             style={{ color: "var(--accent)" }}
           >
-            Hệ Thống Sắp Ra Mắt
+            {t("soon.subtitle")}
           </motion.div>
 
           <motion.p
@@ -57,8 +59,7 @@ export function ComingSoonPage() {
             className="text-sm mt-4 max-w-md mx-auto"
             style={{ color: "var(--text-dim)" }}
           >
-            Hệ thống mới đang được phát triển. Hãy theo dõi Discord để nhận
-            thông báo ngay khi mở khoá!
+            {t("soon.body")}
           </motion.p>
 
           <motion.div
@@ -70,11 +71,11 @@ export function ComingSoonPage() {
           >
             <div className="flex items-center gap-2">
               <Rocket className="w-4 h-4" style={{ color: "var(--accent)" }} />
-              In Development
+              {t("soon.dev")}
             </div>
             <div className="flex items-center gap-2">
               <Lock className="w-4 h-4" style={{ color: "var(--accent)" }} />
-              Beta Locked
+              {t("soon.locked")}
             </div>
           </motion.div>
 

@@ -1,4 +1,5 @@
 import { Home, Info, Settings as SettingsIcon, MessageCircle, Sparkles } from "lucide-react";
+import { useT } from "@/i18n";
 
 export type TabId = "home" | "info" | "settings" | "soon";
 
@@ -7,14 +8,15 @@ interface Props {
   onChange: (id: TabId) => void;
 }
 
-const items: { id: TabId; label: string; icon: typeof Home }[] = [
-  { id: "home", label: "Trang Chủ", icon: Home },
-  { id: "info", label: "Thông Tin", icon: Info },
-  { id: "settings", label: "Cài Đặt", icon: SettingsIcon },
-  { id: "soon", label: "Comming Soon....", icon: Sparkles },
-];
-
 export function Sidebar({ active, onChange }: Props) {
+  const t = useT();
+  const items: { id: TabId; label: string; icon: typeof Home }[] = [
+    { id: "home",     label: t("nav.home"),     icon: Home },
+    { id: "info",     label: t("nav.info"),     icon: Info },
+    { id: "settings", label: t("nav.settings"), icon: SettingsIcon },
+    { id: "soon",     label: t("nav.soon"),     icon: Sparkles },
+  ];
+
   return (
     <aside className="w-[200px] shrink-0 border-r border-[var(--border-soft)] flex flex-col bg-[var(--bg-panel)]">
       <nav className="flex-1 py-4 px-2 flex flex-col gap-1">
@@ -51,10 +53,10 @@ export function Sidebar({ active, onChange }: Props) {
           className="btn justify-start text-xs"
           style={{ background: "#5865F2", color: "#fff", borderColor: "transparent" }}
         >
-          <MessageCircle className="w-3.5 h-3.5" /> Discord
+          <MessageCircle className="w-3.5 h-3.5" /> {t("nav.discord")}
         </a>
         <div className="text-[10px] text-center" style={{ color: "var(--text-muted)" }}>
-          Original By <span style={{ color: "var(--accent)" }}>Dhja</span>
+          {t("nav.originalBy")} <span style={{ color: "var(--accent)" }}>Dhja</span>
         </div>
       </div>
     </aside>

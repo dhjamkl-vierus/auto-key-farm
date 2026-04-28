@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Minus, Maximize2, X } from "lucide-react";
+import { useT } from "@/i18n";
 
 interface Props {
   onMinimize: () => void;
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function Header({ onMinimize, onExit }: Props) {
+  const t = useT();
   return (
     <header className="relative h-[150px] overflow-hidden border-b border-[var(--border-soft)]">
       {/* background layers */}
@@ -75,7 +77,7 @@ export function Header({ onMinimize, onExit }: Props) {
             className="text-xs mt-1 flex items-center gap-1.5"
             style={{ color: "var(--text-dim)" }}
           >
-            <span style={{ color: "var(--accent)" }}>⚡</span> Next Generation Systems
+            <span style={{ color: "var(--accent)" }}>⚡</span> {t("header.subtitle")}
             <span className="opacity-30">|</span>
             <span className="font-mono">v1 BETA</span>
           </motion.div>

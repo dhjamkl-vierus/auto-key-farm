@@ -1,28 +1,39 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "./cheat/Card";
-import { ScrollText, ChevronDown, ChevronUp, Trash2, Eye, EyeOff } from "lucide-react";
+import { ScrollText, Trash2, Eye, EyeOff } from "lucide-react";
 import { useLog, formatTs, clearLog } from "@/lib/debug";
+import { useT } from "@/i18n";
 
-const COLLAPSED_COUNT = 6;
+/**
+ * Up to ~7 entries are visible at once; beyond that the panel becomes
+ * scrollable instead of growing or hiding. No "expand" button — the user
+ * can scroll for older items.
+ */
+const ROW_HEIGHT = 28;        // px per row (matches py-1.5 + 11px font + border)
+const MAX_VISIBLE_ROWS = 7;
+const PANEL_MAX = ROW_HEIGHT * MAX_VISIBLE_ROWS;
 
 export function DebugHistory() {
+  const t = useT();
   const [open, setOpen] = useState(true);
-  const [expanded, setExpanded] = useState(false);
   const log = useLog();
   const reversed = [...log].reverse(); // newest first
-  const visible = expanded ? reversed : reversed.slice(0, COLLAPSED_COUNT);
 
   return (
     <Card
-      title="Debug History"
+      title={t("set.history")}
       icon={<ScrollText className="w-3.5 h-3.5" />}
       right={
         <div className="flex items-center gap-1">
-          <button onClick={() => setOpen((v) => !v)} className="btn btn-ghost text-xs p-1.5" title={open ? "Hide" : "Show"}>
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="btn btn-ghost text-xs p-1.5"
+            title={open ? t("set.historyHide") : t("set.historyShow")}
+          >
             {open ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
           </button>
-          <button onClick={clearLog} className="btn btn-ghost text-xs p-1.5" title="Clear all entries">
+          <button onClick={clearLog} className="btn btn-ghost text-xs p-1.5" title={t("set.historyClear")}>
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -30,11 +41,11 @@ export function DebugHistory() {
     >
       {!open ? (
         <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-          History is hidden. Click <Eye className="w-3 h-3 inline" /> above to show.
+          {t("set.historyHidden")}
         </div>
       ) : log.length === 0 ? (
         <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-          No log entries yet. Toggle macro on to start producing events.
+          {t("set.historyEmpty")}
         </div>
       ) : (
         <>
@@ -43,11 +54,11 @@ export function DebugHistory() {
             style={{
               background: "var(--bg-base)",
               borderColor: "var(--border-soft)",
-              maxHeight: expanded ? 360 : 200,
+              maxHeight: PANEL_MAX,
             }}
           >
             <AnimatePresence initial={false}>
-              {visible.map((e) => (
+              {reversed.map((e) => (
                 <motion.div
                   key={e.id}
                   initial={{ opacity: 0, y: -4 }}
@@ -80,18 +91,9 @@ export function DebugHistory() {
             </AnimatePresence>
           </div>
 
-          {log.length > COLLAPSED_COUNT && (
-            <div className="flex items-center justify-between mt-2">
-              <div className="text-[10px]" style={{ color: "var(--text-muted)" }}>
-                Showing <b>{visible.length}</b> of <b>{log.length}</b> entries.
-              </div>
-              <button onClick={() => setExpanded((v) => !v)} className="btn text-xs">
-                {expanded ? (
-                  <><ChevronUp className="w-3 h-3" /> Ẩn bớt</>
-                ) : (
-                  <><ChevronDown className="w-3 h-3" /> Xem tất cả ({log.length - COLLAPSED_COUNT}+)</>
-                )}
-              </button>
+          {log.length > MAX_VISIBLE_ROWS && (
+            <div className="text-[10px] mt-2" style={{ color: "var(--text-muted)" }}>
+              {t("set.historyShowing", { visible: MAX_VISIBLE_ROWS, total: log.length })}
             </div>
           )}
         </>

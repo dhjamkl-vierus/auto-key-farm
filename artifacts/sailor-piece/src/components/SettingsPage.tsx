@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { Palette, Keyboard, Webhook, Eye, Bug, ChevronDown, ChevronUp, Gamepad2 } from "lucide-react";
+import { Palette, Keyboard, Webhook, Eye, Bug, ChevronDown, ChevronUp, Gamepad2, Languages } from "lucide-react";
 import { DebugHistory } from "./DebugHistory";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "./cheat/Card";
 import { Switch } from "./cheat/Switch";
 import { KeyCapture } from "./KeyCapture";
+import { LanguageSelector, CurrentLanguageBadge } from "./LanguageSelector";
 import { THEMES, type ThemeId } from "@/lib/themes";
 import { PRESETS } from "@/lib/presets";
 import type { AppConfig, GamePresetId } from "@/lib/storage";
 import { dbg } from "@/lib/debug";
 import { sendDiscord } from "@/lib/macro";
+import { useT, type Lang } from "@/i18n";
 
 interface Props {
   cfg: AppConfig;
@@ -20,16 +22,35 @@ interface Props {
 const COLLAPSED_COUNT = 8;
 
 export function SettingsPage({ cfg, set, applyAll }: Props) {
+  const t = useT();
   const [showAllThemes, setShowAllThemes] = useState(false);
   const visibleThemes = showAllThemes ? THEMES : THEMES.slice(0, COLLAPSED_COUNT);
   const hiddenCount = THEMES.length - COLLAPSED_COUNT;
 
   return (
     <div className="grid gap-4">
-      {/* GAME PRESET */}
-      <Card title="Game Preset" icon={<Gamepad2 className="w-3.5 h-3.5" />}>
+      {/* LANGUAGE */}
+      <Card
+        title={t("set.language")}
+        icon={<Languages className="w-3.5 h-3.5" />}
+        right={<CurrentLanguageBadge />}
+      >
         <div className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>
-          Chọn một preset có sẵn để cấu hình tự động cho game Roblox tương ứng.
+          {t("set.languageDesc")}
+        </div>
+        <LanguageSelector
+          value={cfg.language}
+          onChange={(l: Lang) => {
+            set("language", l);
+            dbg.info(`Language changed to ${l}`);
+          }}
+        />
+      </Card>
+
+      {/* GAME PRESET */}
+      <Card title={t("set.preset")} icon={<Gamepad2 className="w-3.5 h-3.5" />}>
+        <div className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>
+          {t("set.presetDesc")}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {PRESETS.map((p) => (
@@ -63,7 +84,7 @@ export function SettingsPage({ cfg, set, applyAll }: Props) {
 
       {/* APPEARANCE */}
       <Card
-        title="Appearance Color"
+        title={t("set.appearance")}
         icon={<Palette className="w-3.5 h-3.5" />}
         right={
           hiddenCount > 0 && (
@@ -73,11 +94,11 @@ export function SettingsPage({ cfg, set, applyAll }: Props) {
             >
               {showAllThemes ? (
                 <>
-                  <ChevronUp className="w-3 h-3" /> Ẩn bớt
+                  <ChevronUp className="w-3 h-3" /> {t("set.hideAll")}
                 </>
               ) : (
                 <>
-                  <ChevronDown className="w-3 h-3" /> Xem tất cả ({hiddenCount}+)
+                  <ChevronDown className="w-3 h-3" /> {t("set.viewAll", { count: hiddenCount })}
                 </>
               )}
             </button>
@@ -85,58 +106,59 @@ export function SettingsPage({ cfg, set, applyAll }: Props) {
         }
       >
         <div className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>
-          {THEMES.length} themes available. Currently <b style={{ color: "var(--accent)" }}>{THEMES.find(t => t.id === cfg.theme)?.label}</b>.
+          {t("set.themesAvailable", { count: THEMES.length })}{" "}
+          <b style={{ color: "var(--accent)" }}>{THEMES.find(th => th.id === cfg.theme)?.label}</b>.
         </div>
         <div className="grid grid-cols-4 gap-2">
           <AnimatePresence initial={false}>
-            {visibleThemes.map((t) => (
+            {visibleThemes.map((th) => (
               <motion.button
-                key={t.id}
+                key={th.id}
                 layout
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.18 }}
                 onClick={() => {
-                  set("theme", t.id as ThemeId);
-                  dbg.info(`Theme changed to ${t.label}`);
+                  set("theme", th.id as ThemeId);
+                  dbg.info(`Theme changed to ${th.label}`);
                 }}
                 className="rounded-lg p-3 text-xs font-semibold border transition-all"
                 style={{
                   background: "var(--bg-base)",
-                  borderColor: cfg.theme === t.id ? "var(--accent)" : "var(--border-soft)",
-                  boxShadow: cfg.theme === t.id ? "0 0 18px -6px var(--accent-glow)" : undefined,
-                  color: cfg.theme === t.id ? "var(--accent)" : "var(--text-dim)",
+                  borderColor: cfg.theme === th.id ? "var(--accent)" : "var(--border-soft)",
+                  boxShadow: cfg.theme === th.id ? "0 0 18px -6px var(--accent-glow)" : undefined,
+                  color: cfg.theme === th.id ? "var(--accent)" : "var(--text-dim)",
                 }}
               >
                 <div className="flex justify-center mb-2">
                   <div
                     className="w-10 h-10 rounded-md"
                     style={{
-                      background: `linear-gradient(135deg, ${t.swatch[0]}, ${t.swatch[1]})`,
-                      boxShadow: `0 0 12px ${t.swatch[0]}55`,
+                      background: `linear-gradient(135deg, ${th.swatch[0]}, ${th.swatch[1]})`,
+                      boxShadow: `0 0 12px ${th.swatch[0]}55`,
                     }}
                   />
                 </div>
-                {t.label}
+                {th.label}
               </motion.button>
             ))}
           </AnimatePresence>
         </div>
       </Card>
 
-      <Card title="Hotkeys" icon={<Keyboard className="w-3.5 h-3.5" />}>
+      <Card title={t("set.hotkeysTitle")} icon={<Keyboard className="w-3.5 h-3.5" />}>
         <div className="text-xs mb-3" style={{ color: "var(--text-dim)" }}>
-          Pick any key on your keyboard. Click a button below, then press the key you want.
+          {t("set.hotkeysDesc")}
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <HotkeyField label="Toggle Macro" value={cfg.toggleKey} onChange={(v) => set("toggleKey", v)} />
-          <HotkeyField label="Show / Hide Menu" value={cfg.showHideKey} onChange={(v) => set("showHideKey", v)} />
-          <HotkeyField label="Exit App" value={cfg.exitKey} onChange={(v) => set("exitKey", v)} />
+          <HotkeyField label={t("set.toggleMacro")} value={cfg.toggleKey} onChange={(v) => set("toggleKey", v)} />
+          <HotkeyField label={t("set.showHide")} value={cfg.showHideKey} onChange={(v) => set("showHideKey", v)} />
+          <HotkeyField label={t("set.exitApp")} value={cfg.exitKey} onChange={(v) => set("exitKey", v)} />
         </div>
       </Card>
 
-      <Card title="Discord Webhook" icon={<Webhook className="w-3.5 h-3.5" />}
+      <Card title={t("set.webhook")} icon={<Webhook className="w-3.5 h-3.5" />}
         right={<Switch checked={cfg.useWebhook} onChange={(v) => set("useWebhook", v)} />}
       >
         <div className="grid gap-2">
@@ -150,7 +172,7 @@ export function SettingsPage({ cfg, set, applyAll }: Props) {
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
-                Heartbeat interval (minutes)
+                {t("set.heartbeat")}
               </div>
               <input
                 type="number"
@@ -173,18 +195,18 @@ export function SettingsPage({ cfg, set, applyAll }: Props) {
                 }
               }}
             >
-              Send test
+              {t("set.sendTest")}
             </button>
           </div>
         </div>
       </Card>
 
-      <Card title="Inline Debug" icon={<Bug className="w-3.5 h-3.5" />}
+      <Card title={t("set.debug")} icon={<Bug className="w-3.5 h-3.5" />}
         right={<Switch checked={cfg.debugEnabled} onChange={(v) => set("debugEnabled", v)} />}
       >
         <div className="text-xs flex items-center gap-2" style={{ color: "var(--text-dim)" }}>
           <Eye className="w-3.5 h-3.5" />
-          Debug messages are shown inline at the bottom of the menu and de-duplicated automatically (no spam).
+          {t("set.debugDesc")}
         </div>
       </Card>
 

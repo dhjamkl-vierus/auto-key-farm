@@ -15,21 +15,28 @@ import { macro } from "@/lib/macro";
 import { matchesShortcut } from "@/lib/keynames";
 import { dbg } from "@/lib/debug";
 import { initDesktop } from "@/lib/desktop";
+import { I18nProvider, useT, type Lang } from "@/i18n";
 import { Power } from "lucide-react";
 
 export default function App() {
   const [cfg, setCfg] = useState<AppConfig>(() => loadConfig());
+  const setLang = (lang: Lang) => setCfg((c) => ({ ...c, language: lang }));
+  return (
+    <I18nProvider lang={cfg.language} setLang={setLang}>
+      <AppInner cfg={cfg} setCfg={setCfg} />
+    </I18nProvider>
+  );
+}
+
+function AppInner({ cfg, setCfg }: { cfg: AppConfig; setCfg: React.Dispatch<React.SetStateAction<AppConfig>>; }) {
+  const t = useT();
   const [tab, setTab] = useState<TabId>("home");
   const [hidden, setHidden] = useState(false);
   const [exited, setExited] = useState(false);
   const cfgRef = useRef(cfg);
 
-  // One-time bridge bring-up (Electron only; no-op in browser).
-  useEffect(() => {
-    initDesktop();
-  }, []);
+  useEffect(() => { initDesktop(); }, []);
 
-  // Persist + apply
   useEffect(() => {
     cfgRef.current = cfg;
     saveConfig(cfg);
@@ -44,58 +51,36 @@ export default function App() {
     setCfg((c) => ({ ...c, ...patch }));
   };
 
-  // Global hotkeys (F1 toggle, F2 show/hide, F3 exit)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const c = cfgRef.current;
-      if (matchesShortcut(c.toggleKey, e)) {
-        e.preventDefault();
-        macro.toggle();
-        return;
-      }
+      if (matchesShortcut(c.toggleKey, e)) { e.preventDefault(); macro.toggle(); return; }
       if (matchesShortcut(c.showHideKey, e)) {
         e.preventDefault();
-        setHidden((h) => {
-          dbg.info(h ? "Menu shown" : "Menu hidden");
-          return !h;
-        });
+        setHidden((h) => { dbg.info(h ? "Menu shown" : "Menu hidden"); return !h; });
         return;
       }
-      if (matchesShortcut(c.exitKey, e)) {
-        e.preventDefault();
-        handleExit();
-      }
+      if (matchesShortcut(c.exitKey, e)) { e.preventDefault(); handleExit(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const handleExit = () => {
-    macro.stop(true);
-    setExited(true);
-  };
+  const handleExit = () => { macro.stop(true); setExited(true); };
 
   if (exited) {
     return (
       <div className="app-shell h-screen w-screen flex items-center justify-center text-center">
         <div>
-          <div
-            className="font-display text-4xl font-bold tracking-widest glow-text"
-            style={{ color: "var(--text-base)" }}
-          >
-            GOODBYE, PIRATE
+          <div className="font-display text-4xl font-bold tracking-widest glow-text" style={{ color: "var(--text-base)" }}>
+            {t("bye.title")}
           </div>
-          <div className="mt-3" style={{ color: "var(--text-dim)" }}>
-            AutoKey-Farm has been closed. You can reload the page to start again.
-          </div>
+          <div className="mt-3" style={{ color: "var(--text-dim)" }}>{t("bye.body")}</div>
           <button
             className="btn btn-primary mt-6"
-            onClick={() => {
-              setExited(false);
-              dbg.ok("Session restored");
-            }}
+            onClick={() => { setExited(false); dbg.ok("Session restored"); }}
           >
-            <Power className="w-4 h-4" /> Restart
+            <Power className="w-4 h-4" /> {t("bye.restart")}
           </button>
         </div>
       </div>
@@ -106,48 +91,28 @@ export default function App() {
     <div className="app-shell h-screen w-screen flex flex-col">
       <AnimatePresence mode="wait">
         {hidden ? (
-          <motion.div
-            key="hidden"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="h-full w-full flex items-center justify-center text-center"
-          >
+          <motion.div key="hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="h-full w-full flex items-center justify-center text-center">
             <div>
-              <div
-                className="font-display text-2xl font-bold tracking-widest"
-                style={{ color: "var(--text-dim)" }}
-              >
-                MENU HIDDEN
+              <div className="font-display text-2xl font-bold tracking-widest" style={{ color: "var(--text-dim)" }}>
+                {t("hidden.title")}
               </div>
               <div className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
-                Press <span className="kbd">{cfg.showHideKey}</span> to show menu again
+                {t("hidden.body", { key: cfg.showHideKey })}
               </div>
             </div>
           </motion.div>
         ) : (
-          <motion.div
-            key="visible"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="h-full flex flex-col"
-          >
+          <motion.div key="visible" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="h-full flex flex-col">
             <Header
-              onMinimize={() => {
-                setHidden(true);
-                dbg.info("Menu hidden");
-              }}
+              onMinimize={() => { setHidden(true); dbg.info("Menu hidden"); }}
               onExit={handleExit}
             />
-
             <div className="px-4 py-2 flex items-center gap-3 flex-wrap border-b border-[var(--border-soft)] bg-[var(--bg-panel)]">
               <HotkeyBar cfg={cfg} />
-              <div className="ml-auto">
-                <StatusStrip />
-              </div>
+              <div className="ml-auto"><StatusStrip /></div>
             </div>
-
             <div className="flex-1 flex min-h-0">
               <Sidebar active={tab} onChange={setTab} />
               <main className="flex-1 scroll-y p-5 fade-up" key={tab}>
@@ -157,7 +122,6 @@ export default function App() {
                 {tab === "soon" && <ComingSoonPage />}
               </main>
             </div>
-
             <DebugTicker enabled={cfg.debugEnabled} />
           </motion.div>
         )}

@@ -2,15 +2,16 @@ import { useMemo, useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 import {
   Power, Cog, Target, MousePointerClick, Plus, Minus, Trash2,
-  Sword, Swords, Hand, Fish,
+  Sword, Swords, Hand, Fish, Sparkles,
 } from "lucide-react";
 import { Card } from "./cheat/Card";
 import { Switch } from "./cheat/Switch";
-import { type AppConfig, type KeySlot, type MacroMode, type MousePos, isFirstEverVisit } from "@/lib/storage";
+import { type AppConfig, type FishingGame, type KeySlot, type MacroMode, type MousePos, isFirstEverVisit } from "@/lib/storage";
 import { macro, formatRuntime, type MacroState } from "@/lib/macro";
 import { dbg } from "@/lib/debug";
 import { KeyCapture } from "./KeyCapture";
 import { MousePosCapture } from "./MousePosCapture";
+import { useT } from "@/i18n";
 
 interface Props {
   cfg: AppConfig;
@@ -24,10 +25,10 @@ function useMacroState(): MacroState {
 }
 
 export function MainPage({ cfg, set }: Props) {
+  const t = useT();
   const state = useMacroState();
   const showWeapon = cfg.mode !== "Easy";
 
-  // First-ever open vs subsequent open
   const isFirst = useMemo(() => isFirstEverVisit(), []);
 
   const updateSlot = (id: string, patch: Partial<KeySlot>) => {
@@ -35,7 +36,6 @@ export function MainPage({ cfg, set }: Props) {
   };
   const addSlot = () => {
     if (cfg.slots.length >= 10) return;
-    // New slot defaults to OFF — user must toggle it on explicitly.
     set("slots", [
       ...cfg.slots,
       { id: crypto.randomUUID(), key: "", delay: 100, enabled: false, assign: "All" },
@@ -43,10 +43,12 @@ export function MainPage({ cfg, set }: Props) {
     dbg.info("Added new key slot");
   };
   const removeSlot = (id: string) => {
-    // Always keep at least 1 slot.
     if (cfg.slots.length <= 1) return;
     set("slots", cfg.slots.filter((s) => s.id !== id));
   };
+
+  const modeLabel = (m: MacroMode) =>
+    m === "Easy" ? t("mode.easy") : m === "Boss Rush" ? t("mode.boss") : t("mode.infinity");
 
   return (
     <div className="grid gap-4">
@@ -58,16 +60,16 @@ export function MainPage({ cfg, set }: Props) {
       >
         <div className="text-lg font-bold flex items-center gap-2">
           <span style={{ color: "var(--accent)" }}>▸</span>
-          {isFirst ? "Chào Mừng Người Dùng!!" : "Chào mừng trở lại!"}
+          {isFirst ? t("main.welcome") : t("main.welcomeBack")}
         </div>
         <div className="text-sm mt-1" style={{ color: "var(--text-dim)" }}>
-          ▸ AutoKey-Farm Systems — Hệ Thống trải nghiệm chế độ AutoKey-Farm
+          ▸ {t("main.tagline")}
         </div>
       </motion.div>
 
       {/* MAIN — system status */}
       <Card
-        title="Main"
+        title={t("card.main")}
         icon={<Power className="w-3.5 h-3.5" />}
         delay={0.05}
         right={
@@ -82,25 +84,30 @@ export function MainPage({ cfg, set }: Props) {
               className="inline-block w-2 h-2 rounded-full dot-pulse"
               style={{ background: state.active ? "var(--good)" : "var(--text-muted)" }}
             />
-            Runtime: <b>{formatRuntime(state.runtimeMs)}</b>
+            {t("card.runtime")}: <b>{formatRuntime(state.runtimeMs)}</b>
           </div>
         }
       >
         <div className="flex items-center justify-between py-2">
           <div>
-            <div className="font-bold text-sm">SYSTEM STATUS</div>
+            <div className="font-bold text-sm">{t("status.systemStatus")}</div>
             <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-              Press <span className="kbd">{cfg.toggleKey}</span> to toggle macro
+              {t("status.pressTo", { key: cfg.toggleKey }).split(cfg.toggleKey).map((part, i, arr) => (
+                <span key={i}>
+                  {part}
+                  {i < arr.length - 1 && <span className="kbd">{cfg.toggleKey}</span>}
+                </span>
+              ))}
             </div>
           </div>
           <div className="flex items-center gap-3">
             <span
-              className="font-mono text-xs font-bold w-7 text-right"
+              className="font-mono text-xs font-bold w-10 text-right"
               style={{ color: state.active ? "var(--good)" : "var(--bad)" }}
             >
-              {state.active ? "ON" : "OFF"}
+              {state.active ? t("status.on") : t("status.off")}
             </span>
-            <Switch checked={state.active} onChange={() => macro.toggle()} label="System" />
+            <Switch checked={state.active} onChange={() => macro.toggle()} label={t("status.system")} />
           </div>
         </div>
 
@@ -108,9 +115,9 @@ export function MainPage({ cfg, set }: Props) {
 
         <div className="flex items-center justify-between py-2">
           <div>
-            <div className="font-bold text-sm">MODE</div>
+            <div className="font-bold text-sm">{t("mode.title")}</div>
             <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-              Choose your farming mode
+              {t("mode.subtitle")}
             </div>
           </div>
           <div className="flex gap-1">
@@ -128,7 +135,7 @@ export function MainPage({ cfg, set }: Props) {
                   boxShadow: cfg.mode === m ? "0 0 18px var(--accent-glow)" : undefined,
                 }}
               >
-                {m}
+                {modeLabel(m)}
               </button>
             ))}
           </div>
@@ -136,35 +143,35 @@ export function MainPage({ cfg, set }: Props) {
 
         <div className="divider-x my-2" />
         <div className="grid grid-cols-3 gap-2 mt-2 text-center">
-          <Stat label="Sends" value={state.totalSends} />
-          <Stat label="Clicks" value={state.totalClicks} />
-          <Stat label="Active Slots" value={cfg.slots.filter((s) => s.enabled && s.key).length} />
+          <Stat label={t("stat.sends")} value={state.totalSends} />
+          <Stat label={t("stat.clicks")} value={state.totalClicks} />
+          <Stat label={t("stat.activeSlots")} value={cfg.slots.filter((s) => s.enabled).length} />
         </div>
       </Card>
 
       {/* MODE SETTINGS — Weapon switching */}
       {showWeapon && (
-        <Card title="Mode Settings" icon={<Cog className="w-3.5 h-3.5" />} delay={0.08}>
+        <Card title={t("modeSettings.title")} icon={<Cog className="w-3.5 h-3.5" />} delay={0.08}>
           <div className="grid gap-3">
             <WeaponRow
               icon={<Sword className="w-4 h-4" style={{ color: "var(--accent)" }} />}
-              label="Weapon Switching (Manual Select)"
+              label={t("weapon.manual")}
               enabled={cfg.weaponManual}
               onToggle={(v) => set("weaponManual", v)}
             >
               <div className="grid grid-cols-3 gap-2 items-end mt-2">
                 <LabeledInput
-                  label="Delay (ms)"
+                  label={t("weapon.delay")}
                   value={cfg.weaponManualDelay}
                   onChange={(v) => set("weaponManualDelay", v)}
                 />
                 <LabeledMouse
-                  label="Position 1"
+                  label={t("weapon.pos1")}
                   value={cfg.weaponManualPos1}
                   onChange={(v) => set("weaponManualPos1", v)}
                 />
                 <LabeledMouse
-                  label="Position 2"
+                  label={t("weapon.pos2")}
                   value={cfg.weaponManualPos2}
                   onChange={(v) => set("weaponManualPos2", v)}
                 />
@@ -173,13 +180,13 @@ export function MainPage({ cfg, set }: Props) {
 
             <WeaponRow
               icon={<Swords className="w-4 h-4" style={{ color: "var(--accent-2)" }} />}
-              label="Weapon Switching (Auto)"
+              label={t("weapon.auto")}
               enabled={cfg.weaponAuto}
               onToggle={(v) => set("weaponAuto", v)}
             >
               <div className="grid grid-cols-2 gap-2 items-end mt-2">
                 <LabeledInput
-                  label="Auto Swap Delay (ms)"
+                  label={t("weapon.swapDelay")}
                   value={cfg.weaponAutoDelay}
                   onChange={(v) => set("weaponAutoDelay", v)}
                 />
@@ -191,8 +198,7 @@ export function MainPage({ cfg, set }: Props) {
                     borderColor: "var(--border-soft)",
                   }}
                 >
-                  Khi bật: tự động ấn <span className="kbd">1</span> →{" "}
-                  <span className="kbd">2</span> lặp lại theo delay.
+                  {t("weapon.autoExplain")}
                 </div>
               </div>
             </WeaponRow>
@@ -202,24 +208,24 @@ export function MainPage({ cfg, set }: Props) {
 
       {/* TARGET KEY */}
       <Card
-        title="Target Key"
+        title={t("target.title")}
         icon={<Target className="w-3.5 h-3.5" />}
         delay={0.12}
         right={
           <div className="flex gap-1">
             <button onClick={addSlot} className="btn text-xs" disabled={cfg.slots.length >= 10}>
-              <Plus className="w-3 h-3" /> Add Slot
+              <Plus className="w-3 h-3" /> {t("target.add")}
             </button>
             <button onClick={() => removeSlot(cfg.slots[cfg.slots.length - 1]?.id)} className="btn text-xs" disabled={cfg.slots.length <= 1}>
-              <Minus className="w-3 h-3" /> Remove
+              <Minus className="w-3 h-3" /> {t("target.remove")}
             </button>
           </div>
         }
       >
         <div className="grid grid-cols-[68px_1fr_120px_36px] gap-2 mb-2 text-[10px] font-bold tracking-wider uppercase" style={{ color: "var(--text-muted)" }}>
-          <div className="text-center">ON/OFF</div>
-          <div>Key</div>
-          <div>Delay (ms)</div>
+          <div className="text-center">{t("target.colOnOff")}</div>
+          <div>{t("target.colKey")}</div>
+          <div>{t("target.colDelay")}</div>
           <div></div>
         </div>
         <div className="grid gap-1.5">
@@ -237,7 +243,7 @@ export function MainPage({ cfg, set }: Props) {
               <KeyCapture
                 value={s.key}
                 onChange={(v) => updateSlot(s.id, { key: v })}
-                placeholder="press key"
+                placeholder={t("target.pressKey")}
               />
               <input
                 type="number"
@@ -250,7 +256,7 @@ export function MainPage({ cfg, set }: Props) {
                 onClick={() => removeSlot(s.id)}
                 className="btn p-1.5"
                 disabled={cfg.slots.length <= 1}
-                title="Remove"
+                title={t("target.removeTip")}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -260,18 +266,18 @@ export function MainPage({ cfg, set }: Props) {
       </Card>
 
       {/* AUTO CLICK */}
-      <Card title="Auto Clicker" icon={<MousePointerClick className="w-3.5 h-3.5" />} delay={0.16}>
+      <Card title={t("ac.title")} icon={<MousePointerClick className="w-3.5 h-3.5" />} delay={0.16}>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="font-bold text-sm">Enable Auto Click</div>
+            <div className="font-bold text-sm">{t("ac.enable")}</div>
             <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-              Cycles a left-click action while macro is running.
+              {t("ac.desc")}
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                Delay (ms)
+                {t("ac.delay")}
               </div>
               <input
                 type="number"
@@ -287,18 +293,18 @@ export function MainPage({ cfg, set }: Props) {
       </Card>
 
       {/* HOLD KEY */}
-      <Card title="Hold Key" icon={<Hand className="w-3.5 h-3.5" />} delay={0.20}>
+      <Card title={t("hold.title")} icon={<Hand className="w-3.5 h-3.5" />} delay={0.20}>
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="min-w-[180px]">
-            <div className="font-bold text-sm">Enable Hold</div>
+            <div className="font-bold text-sm">{t("hold.enable")}</div>
             <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-              Keeps a key "held" by re-firing it on the chosen interval.
+              {t("hold.desc")}
             </div>
           </div>
           <div className="flex items-end gap-3">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
-                Key
+                {t("hold.key")}
               </div>
               <KeyCapture
                 value={cfg.holdKey}
@@ -308,7 +314,7 @@ export function MainPage({ cfg, set }: Props) {
             </div>
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
-                Delay (ms)
+                {t("hold.delay")}
               </div>
               <input
                 type="number"
@@ -326,54 +332,108 @@ export function MainPage({ cfg, set }: Props) {
       </Card>
 
       {/* FISHING ASSIST */}
-      <Card title="Fishing Assist (King Legacy / Blox Fruits)" icon={<Fish className="w-3.5 h-3.5" />} delay={0.24}>
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="min-w-[200px]">
-            <div className="font-bold text-sm">Enable Fishing</div>
-            <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
-              Auto cast → wait → click to reel. Repeat. Tham khảo macro King_Legacy_Fish.
-            </div>
-          </div>
-          <div className="flex items-end gap-3 flex-wrap">
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
-                Cast Key
-              </div>
-              <KeyCapture
-                value={cfg.fishingCastKey}
-                onChange={(v) => set("fishingCastKey", v)}
-                className="min-w-[140px]"
-              />
-            </div>
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
-                Cast every (ms)
-              </div>
-              <input
-                type="number"
-                min={500}
-                value={cfg.fishingCastDelay}
-                onChange={(e) => set("fishingCastDelay", Math.max(500, Number(e.target.value) || 500))}
-                className="input w-28"
-              />
-            </div>
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
-                Reel after (ms)
-              </div>
-              <input
-                type="number"
-                min={100}
-                value={cfg.fishingReelDelay}
-                onChange={(e) => set("fishingReelDelay", Math.max(100, Number(e.target.value) || 100))}
-                className="input w-28"
-              />
-            </div>
-            <div className="self-center">
-              <Switch checked={cfg.fishingEnabled} onChange={(v) => set("fishingEnabled", v)} />
-            </div>
-          </div>
+      <Card title={t("fish.title")} icon={<Fish className="w-3.5 h-3.5" />} delay={0.24}>
+        {/* Tab switcher: King Legacy / Blox Fruits */}
+        <div className="flex gap-1 mb-3 p-1 rounded-lg w-fit" style={{ background: "var(--bg-base)", border: "1px solid var(--border-soft)" }}>
+          <FishTab
+            active={cfg.fishingGame === "king-legacy"}
+            label={t("fish.tabKL")}
+            onClick={() => set("fishingGame", "king-legacy" as FishingGame)}
+          />
+          <FishTab
+            active={cfg.fishingGame === "blox-fruits"}
+            label={t("fish.tabBF")}
+            onClick={() => set("fishingGame", "blox-fruits" as FishingGame)}
+          />
         </div>
+
+        {cfg.fishingGame === "king-legacy" ? (
+          <>
+            <div className="text-[11px] mb-3" style={{ color: "var(--text-muted)" }}>
+              {t("fish.klDesc")}
+            </div>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="min-w-[200px]">
+                <div className="font-bold text-sm">{t("fish.enable")}</div>
+                <div className="text-[11px]" style={{ color: "var(--text-muted)" }}>
+                  {t("fish.desc")}
+                </div>
+              </div>
+              <div className="flex items-end gap-3 flex-wrap">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
+                    {t("fish.castKey")}
+                  </div>
+                  <KeyCapture
+                    value={cfg.fishingCastKey}
+                    onChange={(v) => set("fishingCastKey", v)}
+                    className="min-w-[140px]"
+                  />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
+                    {t("fish.castHold")}
+                  </div>
+                  <input
+                    type="number"
+                    min={100}
+                    value={cfg.fishingCastHoldMs}
+                    onChange={(e) => set("fishingCastHoldMs", Math.max(100, Number(e.target.value) || 100))}
+                    className="input w-28"
+                  />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
+                    {t("fish.castEvery")}
+                  </div>
+                  <input
+                    type="number"
+                    min={500}
+                    value={cfg.fishingCastDelay}
+                    onChange={(e) => set("fishingCastDelay", Math.max(500, Number(e.target.value) || 500))}
+                    className="input w-28"
+                  />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
+                    {t("fish.reelAfter")}
+                  </div>
+                  <input
+                    type="number"
+                    min={100}
+                    value={cfg.fishingReelDelay}
+                    onChange={(e) => set("fishingReelDelay", Math.max(100, Number(e.target.value) || 100))}
+                    className="input w-28"
+                  />
+                </div>
+                <div className="self-center">
+                  <Switch checked={cfg.fishingEnabled} onChange={(v) => set("fishingEnabled", v)} />
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div
+            className="rounded-lg border p-8 text-center flex flex-col items-center gap-3"
+            style={{ background: "var(--bg-base)", borderColor: "var(--border-soft)" }}
+          >
+            <div
+              className="inline-flex items-center justify-center w-12 h-12 rounded-full"
+              style={{
+                background: "linear-gradient(135deg, var(--accent), var(--accent-2))",
+                boxShadow: "0 0 24px var(--accent-glow)",
+              }}
+            >
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <div className="font-display text-xl font-bold tracking-widest glow-text" style={{ color: "var(--text-base)" }}>
+              {t("fish.bfComingSoon")}
+            </div>
+            <div className="text-[12px] max-w-md" style={{ color: "var(--text-dim)" }}>
+              {t("fish.bfHelp")}
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );
@@ -389,6 +449,22 @@ function Stat({ label, value }: { label: string; value: number }) {
         {label}
       </div>
     </div>
+  );
+}
+
+function FishTab({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="px-3 py-1.5 text-xs font-semibold rounded-md transition-all"
+      style={{
+        background: active ? "linear-gradient(135deg, var(--accent), var(--accent-2))" : "transparent",
+        color: active ? "#fff" : "var(--text-dim)",
+        boxShadow: active ? "0 0 14px var(--accent-glow)" : undefined,
+      }}
+    >
+      {label}
+    </button>
   );
 }
 
